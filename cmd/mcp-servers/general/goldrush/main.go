@@ -2,12 +2,18 @@ package main
 
 import (
 	"log"
+	"os"
 
 	"cg-mentions-bot/cmd/mcp-servers/general/goldrush/endpoints"
 
 	"github.com/mark3labs/mcp-go/server"
 )
 
+/*
+This mcp server is created for GoldRush and requires these env variables
+-	PORT // default 8083
+-	GOLDRUSH_AUTH_TOKEN  // required
+*/
 func main() {
 	// Create a new Goldrush endpoints instance
 	goldrushEndpoints := endpoints.NewGoldrushEndpoints("")
@@ -30,8 +36,12 @@ func main() {
 
 	log.Printf("GoldRush MCP Server started with %d tools", len(tools))
 
-	// Start the stdio server
-	if err := server.ServeStdio(mcpServer); err != nil {
-		log.Printf("Server error: %v\n", err)
+	port := "8083"
+	if v, ok := os.LookupEnv("PORT"); ok {
+		port = v
+	}
+	http := server.NewStreamableHTTPServer(mcpServer, server.WithEndpointPath("/mcp"), server.WithStateLess(true))
+	if err := http.Start(":" + port); err != nil {
+		log.Fatalf("server error: %v", err)
 	}
 }
