@@ -8,7 +8,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func (ge *GoldrushEndpoints) getGasPrices(chainName string, eventType string) string {
+func (ge *GoldrushEndpoints) GetGasPrices(chainName string, eventType string) string {
 
 	url := ge.BaseUrl + "{chainName}/event/{eventType}/gas_prices/"
 
@@ -55,7 +55,7 @@ func (ge *GoldrushEndpoints) GenerateGasPriceTool() (mcp.Tool, func(ctx context.
 		}
 
 		// Call the endpoint method
-		result := ge.getGasPrices(chainName, eventType)
+		result := ge.GetGasPrices(chainName, eventType)
 
 		// Return the response
 		return mcp.NewToolResultText(result), nil

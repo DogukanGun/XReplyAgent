@@ -9,7 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func (ge *GoldrushEndpoints) getActivityAcrossAllChains(walletAddress string) string {
+func (ge *GoldrushEndpoints) GetActivityAcrossAllChains(walletAddress string) string {
 
 	url := ge.BaseUrl + "address/" + walletAddress + "/activity/"
 
@@ -47,7 +47,7 @@ func (ge *GoldrushEndpoints) GenerateActivityTool() (mcp.Tool, func(ctx context.
 		}
 
 		// Call the endpoint method
-		result := ge.getActivityAcrossAllChains(walletAddress)
+		result := ge.GetActivityAcrossAllChains(walletAddress)
 
 		// Return the response
 		return mcp.NewToolResultText(result), nil

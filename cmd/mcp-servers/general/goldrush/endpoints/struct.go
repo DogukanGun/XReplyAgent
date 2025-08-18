@@ -9,7 +9,7 @@ type GoldrushEndpoints struct {
 	AuthToken string
 }
 
-func NewGoldrushEndpoints(chainName string) *GoldrushEndpoints {
+func NewGoldrushEndpoints() *GoldrushEndpoints {
 	return &GoldrushEndpoints{
 		BaseUrl:   "https://api.covalenthq.com/v1/",
 		AuthToken: os.Getenv("GOLDRUSH_AUTH_TOKEN"),

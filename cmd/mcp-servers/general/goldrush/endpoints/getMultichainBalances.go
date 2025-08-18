@@ -9,7 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func (ge *GoldrushEndpoints) getMultichainBalances(walletAddress string) string {
+func (ge *GoldrushEndpoints) GetMultichainBalances(walletAddress string) string {
 
 	url := ge.BaseUrl + "allchains/address/" + walletAddress + "/balances/"
 
@@ -47,7 +47,7 @@ func (ge *GoldrushEndpoints) GenerateMultichainBalancesTool() (mcp.Tool, func(ct
 		}
 
 		// Call the endpoint method
-		result := ge.getMultichainBalances(walletAddress)
+		result := ge.GetMultichainBalances(walletAddress)
 
 		// Return the response
 		return mcp.NewToolResultText(result), nil

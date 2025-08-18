@@ -150,7 +150,8 @@ func cgDiscoveredTools(cg *mcpHTTP) ([]tools.Tool, error) {
 func main() {
 	cgURL := os.Getenv("CG_MCP_HTTP")
 	xURL := os.Getenv("X_MCP_HTTP")
-	if cgURL == "" || xURL == "" {
+	goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
+	if cgURL == "" || xURL == "" || goldrushURL == "" {
 		fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp) and X_MCP_HTTP (e.g., http://localhost:8081/mcp)")
 		os.Exit(1)
 	}
@@ -182,7 +183,7 @@ func main() {
 		os.Exit(1)
 	}
 	toolsList := append(cgTools, xTool{client: x})
-
+	//TODO add goldrush mcp server
 	model := os.Getenv("OPENAI_MODEL")
 	if model == "" {
 		model = "gpt-4.1-mini"

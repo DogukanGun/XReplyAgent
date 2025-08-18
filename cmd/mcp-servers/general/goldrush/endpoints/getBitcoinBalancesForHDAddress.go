@@ -9,7 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func (ge *GoldrushEndpoints) getBitcoinBalancesForHDAddress(walletAddress string) string {
+func (ge *GoldrushEndpoints) GetBitcoinBalancesForHDAddress(walletAddress string) string {
 
 	url := ge.BaseUrl + "btc-mainnet/address/" + walletAddress + "/hd_wallets/"
 
@@ -47,7 +47,7 @@ func (ge *GoldrushEndpoints) GenerateBitcoinBalanceTool() (mcp.Tool, func(ctx co
 		}
 
 		// Call the endpoint method
-		result := ge.getBitcoinBalancesForHDAddress(walletAddress)
+		result := ge.GetBitcoinBalancesForHDAddress(walletAddress)
 
 		// Return the response
 		return mcp.NewToolResultText(result), nil

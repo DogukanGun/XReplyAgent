@@ -9,7 +9,7 @@ import (
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
-func (ge *GoldrushEndpoints) getTokenBalanceForAddress(chainName string, walletAddress string) string {
+func (ge *GoldrushEndpoints) GetTokenBalanceForAddress(chainName string, walletAddress string) string {
 
 	url := ge.BaseUrl + chainName + "/address/" + walletAddress + "/balances_v2/"
 
@@ -57,7 +57,7 @@ func (ge *GoldrushEndpoints) GenerateTokenBalanceForAddressTool() (mcp.Tool, fun
 		}
 
 		// Call the endpoint method
-		result := ge.getTokenBalanceForAddress(chainName, walletAddress)
+		result := ge.GetTokenBalanceForAddress(chainName, walletAddress)
 
 		// Return the response
 		return mcp.NewToolResultText(result), nil

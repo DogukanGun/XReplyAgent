@@ -16,7 +16,7 @@ This mcp server is created for GoldRush and requires these env variables
 */
 func main() {
 	// Create a new Goldrush endpoints instance
-	goldrushEndpoints := endpoints.NewGoldrushEndpoints("")
+	goldrushEndpoints := endpoints.NewGoldrushEndpoints()
 
 	// Create the MCP server
 	mcpServer := server.NewMCPServer(
