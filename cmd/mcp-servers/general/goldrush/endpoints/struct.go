@@ -1,6 +1,8 @@
 package endpoints
 
-import "os"
+import (
+	"os"
+)
 
 type GoldrushEndpoints struct {
 	BaseUrl   string
