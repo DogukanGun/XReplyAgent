@@ -11,7 +11,7 @@ import (
 
 func (ge *GoldrushEndpoints) getNativeTokenBalanceForAddress(chainName string, walletAddress string) string {
 
-	url := ge.BaseUrl + chainName + "/address/" + walletAddress + "/balances_native/"
+	url := ge.BaseUrl + "hyperevm-mainnet" + "/address/" + walletAddress + "/balances_native/"
 
 	req, _ := http.NewRequest("GET", url, nil)
 

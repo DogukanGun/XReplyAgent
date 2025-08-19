@@ -10,7 +10,7 @@ import (
 
 func (ge *GoldrushEndpoints) GetGasPrices(chainName string, eventType string) string {
 
-	url := ge.BaseUrl + "{chainName}/event/{eventType}/gas_prices/"
+	url := ge.BaseUrl + "hyperevm-mainnet" + "/event/" + eventType + "/gas_prices/"
 
 	req, _ := http.NewRequest("GET", url, nil)
 

@@ -11,7 +11,7 @@ import (
 
 func (ge *GoldrushEndpoints) getNftsForAddress(chainName string, walletAddress string) string {
 
-	url := ge.BaseUrl + chainName + "/address/" + walletAddress + "/balances_nft/"
+	url := ge.BaseUrl + "hyperevm-mainnet" + "/address/" + walletAddress + "/balances_nft/"
 
 	req, _ := http.NewRequest("GET", url, nil)
 

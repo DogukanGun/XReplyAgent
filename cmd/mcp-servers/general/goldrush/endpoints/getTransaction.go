@@ -11,7 +11,7 @@ import (
 
 func (ge *GoldrushEndpoints) getTransaction(chainName string, txHash string) string {
 
-	url := ge.BaseUrl + chainName + "/transaction_v2/" + txHash + "/"
+	url := ge.BaseUrl + "hyperevm-mainnet" + "/transaction_v2/" + txHash + "/"
 
 	req, _ := http.NewRequest("GET", url, nil)
 

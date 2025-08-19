@@ -11,7 +11,7 @@ import (
 
 func (ge *GoldrushEndpoints) getHistoricalTokenPrices(chainName string, contractAddress string) string {
 
-	url := ge.BaseUrl + "pricing/historical_by_addresses_v2/" + chainName + "/USD/" + contractAddress + "/"
+	url := ge.BaseUrl + "pricing/historical_by_addresses_v2/" + "hyperevm-mainnet" + "/USD/" + contractAddress + "/"
 
 	req, _ := http.NewRequest("GET", url, nil)
 

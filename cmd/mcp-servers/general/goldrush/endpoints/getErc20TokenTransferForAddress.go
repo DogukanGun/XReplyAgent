@@ -11,7 +11,7 @@ import (
 
 func (ge *GoldrushEndpoints) getErc20TokenTransferForAddress(chainName string, walletAddress string) string {
 
-	url := ge.BaseUrl + chainName + "/address/" + walletAddress + "/transfers_v2/"
+	url := ge.BaseUrl + "hyperevm-mainnet" + "/address/" + walletAddress + "/transfers_v2/"
 
 	req, _ := http.NewRequest("GET", url, nil)
 
