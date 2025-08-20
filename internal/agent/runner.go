@@ -29,6 +29,9 @@ func NewRunner(agentCmd string) Runner {
 		if v := os.Getenv("AGENT_X_MCP_HTTP"); v != "" {
 			env = append(env, fmt.Sprintf("X_MCP_HTTP=%s", v))
 		}
+		if v := os.Getenv("AGENT_GOLDRUSH_MCP_HTTP"); v != "" {
+			env = append(env, fmt.Sprintf("GOLDRUSH_MCP_HTTP=%s", v))
+		}
 		if v := os.Getenv("OPENAI_API_KEY"); v != "" {
 			env = append(env, fmt.Sprintf("OPENAI_API_KEY=%s", v))
 		}
