@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -234,7 +235,6 @@ func main() {
 		toolsList,
 		agents.ZeroShotReactDescription,
 		agents.WithMaxIterations(8),
-		agents.WithReturnIntermediateSteps(),
 		agents.WithParserErrorHandler(peh),
 	)
 	if err != nil {
@@ -263,10 +263,12 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Extract and sanitize final answer
+	answer, _ := out["output"].(string)
+	answer = sanitizeFinalAnswer(answer)
+
 	// If a reply target was given, post the agent's answer using the X MCP directly.
 	if strings.TrimSpace(*replyTo) != "" {
-		answer, _ := out["output"].(string)
-		answer = strings.TrimSpace(answer)
 		if answer == "" {
 			fmt.Fprintln(os.Stderr, "agent produced empty answer; cannot post to X")
 			os.Exit(1)
@@ -286,5 +288,29 @@ func main() {
 		}
 	}
 
-	fmt.Println(out["output"])
+	fmt.Println(answer)
+}
+
+// sanitizeFinalAnswer removes ReAct/tool-calling artifacts so only the answer remains
+func sanitizeFinalAnswer(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return s
+	}
+	// Remove common prefixes
+	s = strings.TrimPrefix(s, "Final Answer:")
+	s = strings.TrimSpace(s)
+	// Remove obvious tool/action lines
+	re := regexp.MustCompile(`(?i)^(action|action input|observation|thought|tool|intermediate steps)\s*:`)
+	lines := strings.Split(s, "\n")
+	filtered := make([]string, 0, len(lines))
+	for _, ln := range lines {
+		if re.MatchString(strings.TrimSpace(ln)) {
+			continue
+		}
+		filtered = append(filtered, ln)
+	}
+	s = strings.TrimSpace(strings.Join(filtered, "\n"))
+	s = strings.ReplaceAll(s, "```", "")
+	return strings.TrimSpace(s)
 }
