@@ -124,13 +124,13 @@ export default function XReplyAgentPage() {
             <li>
               <code>cmd/mcp-servers/general/coingecko/xmcp</code> (X MCP)
               <ul>
-                <li>Tool: `twitter.post_reply` (posts under a tweet). Requires X auth (Bearer or OAuth1).</li>
+                <li>Tool: &quot;twitter.post_reply&quot; (posts under a tweet). Requires X auth (Bearer or OAuth1).</li>
               </ul>
             </li>
             <li>
               <code>cmd/mcp-servers/general/coingecko/cgproxy</code> (CoinGecko Proxy MCP)
               <ul>
-                <li>Bridges HTTP MCP to an upstream stdio CoinGecko MCP (local via `npx @coingecko/coingecko-mcp` or remote via `mcp-remote`).</li>
+                <li>Bridges HTTP MCP to an upstream stdio CoinGecko MCP (local via &quot;npx @coingecko/coingecko-mcp&quot; or remote via &quot;mcp-remote&quot;).</li>
                 <li>Discovers and forwards all upstream tools.</li>
               </ul>
             </li>
@@ -138,7 +138,7 @@ export default function XReplyAgentPage() {
               <code>cmd/mcp-servers/general/goldrush</code> (GoldRush MCP)
               <ul>
                 <li>Adds tools for on-chain data (Covalent GoldRush): balances, transactions, gas, NFTs, token holders, etc.</li>
-                <li>Requires `GOLDRUSH_AUTH_TOKEN` and often an allow-list (IP) on Covalent.</li>
+                <li>Requires &quot;GOLDRUSH_AUTH_TOKEN&quot; and often an allow-list (IP) on Covalent.</li>
               </ul>
             </li>
             <li>
@@ -162,10 +162,10 @@ export default function XReplyAgentPage() {
         <section className="mb-8">
           <h2 className="text-2xl font-semibold mb-4">n8n integration 🧰</h2>
           <h3 className="text-xl font-medium mb-2">
-            Payloads accepted by `POST /mentions`
+            Payloads accepted by &quot;POST /mentions&quot;
           </h3>
           <ul className="list-disc list-inside text-gray-700 dark:text-gray-300">
-            <li>Single object (`MentionsPayload`) or array of objects.</li>
+            <li>Single object (&quot;MentionsPayload&quot;) or array of objects.</li>
           </ul>
           <h4 className="text-lg font-medium mt-4 mb-2">Example (single):</h4>
           <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md text-sm overflow-x-auto">
@@ -197,11 +197,11 @@ export default function XReplyAgentPage() {
                 <pre className="whitespace-pre-wrap break-words bg-gray-200 dark:bg-gray-700 p-2 mt-1 rounded"><code>git clone https://github.com/DogukanGun/XReplyAgent.git</code></pre>
               </li>
               <li>Set up environment variables:
-                <pre className="whitespace-pre-wrap break-words bg-gray-200 dark:bg-gray-700 p-2 mt-1 rounded"><code>export AGENT_CMD="$(pwd)/agent"
-export AGENT_CG_MCP_HTTP="http://localhost:8082/mcp"
-export AGENT_X_MCP_HTTP="http://localhost:8081/mcp"
-export AGENT_GOLDRUSH_MCP_HTTP="http://localhost:8083/mcp"
-export OPENAI_API_KEY="your_openai_key"</code></pre>
+                <pre className="whitespace-pre-wrap break-words bg-gray-200 dark:bg-gray-700 p-2 mt-1 rounded"><code>export AGENT_CMD=&quot;$(pwd)/agent&quot;
+export AGENT_CG_MCP_HTTP=&quot;http://localhost:8082/mcp&quot;
+export AGENT_X_MCP_HTTP=&quot;http://localhost:8081/mcp&quot;
+export AGENT_GOLDRUSH_MCP_HTTP=&quot;http://localhost:8083/mcp&quot;
+export OPENAI_API_KEY=&quot;your_openai_key&quot;</code></pre>
               </li>
               <li>Install dependencies and build the project</li>
               <li>Start the bot server and required MCP servers</li>
