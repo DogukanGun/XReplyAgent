@@ -11,10 +11,10 @@ func (wf *WalletFunctions) ReadUserWallet() (string, error) {
 		Database:   "User",
 		Collection: "Wallet",
 	}
-	var user User
+	var user []User
 	ack := mg.Read(wf.MongoConnection, bson.D{{Key: "twitter_id", Value: wf.TwitterId}}, &user)
 	if ack {
-		return user.PublicKey, nil
+		return user[0].PublicKey, nil
 	}
 	return "", errors.New("user not found")
 }

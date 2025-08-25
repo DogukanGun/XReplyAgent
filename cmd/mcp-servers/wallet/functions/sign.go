@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"go.mongodb.org/mongo-driver/v2/bson"
-	"log"
 	"math/big"
 	"os"
 	_ "strconv"
@@ -21,24 +20,16 @@ import (
 func (wf *WalletFunctions) SignTransaction(chainId string, toAddr string, data []byte, value *big.Int) (string, error) {
 	ctx := context.Background()
 
-	// Get user wallet (⚠️ must return private key, not just public key!)
-	mongoClient, err := db.ConnectToDB("mongodb://localhost:27017/")
-	if err != nil {
-		log.Fatal(err)
-	}
 	mg := db.MongoDB{
 		Database:   "User",
 		Collection: "Wallet",
 	}
 	var user []User
-	ack := mg.Read(mongoClient, bson.D{{Key: "twitter_id", Value: wf.TwitterId}}, &user)
+	ack := mg.Read(wf.MongoConnection, bson.D{{Key: "twitter_id", Value: wf.TwitterId}}, &user)
 	if !ack {
 		return "", errors.New("failed to find user")
 	}
 	privKeyHex := user[0].PrivateKey
-	if err != nil {
-		return "", errors.New("user does not exist, first create a user account")
-	}
 	privateKey, err := crypto.HexToECDSA(privKeyHex)
 	if err != nil {
 		return "", fmt.Errorf("invalid private key: %w", err)
@@ -46,8 +37,7 @@ func (wf *WalletFunctions) SignTransaction(chainId string, toAddr string, data [
 	fromAddr := crypto.PubkeyToAddress(privateKey.PublicKey)
 
 	// Connect to RPC
-	log.Printf("RPC: %s", os.Getenv("BNB_OP_TESTNET"))
-	client, err := ethclient.DialContext(ctx, os.Getenv("BNB_OP_TESTNET"))
+	client, err := ethclient.DialContext(ctx, os.Getenv("BNB_RPC"))
 	if err != nil {
 		return "", fmt.Errorf("failed to connect to RPC: %w", err)
 	}
