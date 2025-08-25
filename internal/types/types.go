@@ -1,5 +1,10 @@
 package types
 
+import (
+	"context"
+	"github.com/mark3labs/mcp-go/mcp"
+)
+
 // Mention represents one mention payload item.
 type Mention struct {
 	TweetID        string `json:"tweet_id"`
@@ -15,4 +20,10 @@ type MentionsPayload struct {
 	Count    int            `json:"count"`
 	Mentions []Mention      `json:"mentions"`
 	Meta     map[string]any `json:"meta,omitempty"`
+}
+
+// ToolInfo contains a tool and its handler function
+type ToolInfo struct {
+	Tool    mcp.Tool
+	Handler func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error)
 }

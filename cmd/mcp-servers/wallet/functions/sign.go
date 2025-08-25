@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"github.com/mark3labs/mcp-go/mcp"
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"math/big"
 	"os"
@@ -103,4 +104,45 @@ func (wf *WalletFunctions) SignTransaction(chainId string, toAddr string, data [
 	}
 
 	return signedTx.Hash().Hex(), nil
+}
+
+func (wf *WalletFunctions) GenerateSignTransactionTool() (mcp.Tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error)) {
+	tool := mcp.NewTool("sign_transaction",
+		mcp.WithDescription("Sign and submit a transaction"),
+		mcp.WithString("chain_id", mcp.Required(), mcp.Description("Chain ID to use")),
+		mcp.WithString("to_address", mcp.Required(), mcp.Description("Destination address")),
+		mcp.WithString("data", mcp.Description("Hex-encoded transaction data. If you don't have any data, send empty byte array")),
+		mcp.WithString("value", mcp.Description("Amount of native token to send (in wei). If you don't send anything, use 0")),
+		mcp.WithString("twitter_id", mcp.Required(), mcp.Description("Twitter id of the user")),
+	)
+
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		chainID, _ := request.RequireString("chain_id")
+		toAddr, _ := request.RequireString("to_address")
+		dataStr, _ := request.RequireString("data")
+		valueStr, _ := request.RequireString("value")
+		twitterId, _ := request.RequireString("twitter_id")
+		wf.TwitterId = twitterId
+		var data []byte
+		if dataStr != "" {
+			data = common.FromHex(dataStr)
+		}
+		var value *big.Int
+		if valueStr != "" {
+			v, ok := new(big.Int).SetString(valueStr, 10)
+			if !ok {
+				return mcp.NewToolResultError("invalid value parameter"), nil
+			}
+			value = v
+		} else {
+			value = big.NewInt(0)
+		}
+
+		txHash, err := wf.SignTransaction(chainID, toAddr, data, value)
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		return mcp.NewToolResultText(txHash), nil
+	}
+	return tool, handler
 }

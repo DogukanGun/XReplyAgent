@@ -6,6 +6,7 @@ import (
 	"github.com/ethereum/go-ethereum/common"
 	_ "github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/mark3labs/mcp-go/mcp"
 	"math/big"
 	"os"
 )
@@ -32,4 +33,23 @@ func (wf *WalletFunctions) GetWalletBalance() (*big.Int, error) {
 		return nil, fmt.Errorf("failed to get balance: %w", err)
 	}
 	return balance, nil
+}
+
+func (wf *WalletFunctions) GenerateGetWalletBalanceTool() (mcp.Tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error)) {
+	tool := mcp.NewTool("get_wallet_balance",
+		mcp.WithDescription("Get the balance of the wallet"),
+		mcp.WithString("twitter_id", mcp.Required(), mcp.Description("Twitter id of the user")),
+	)
+
+	handler := func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error) {
+		twitterId, _ := request.RequireString("twitter_id")
+		wf.TwitterId = twitterId
+
+		balance, err := wf.GetWalletBalance()
+		if err != nil {
+			return mcp.NewToolResultError(err.Error()), nil
+		}
+		return mcp.NewToolResultText(balance.String()), nil
+	}
+	return tool, handler
 }
