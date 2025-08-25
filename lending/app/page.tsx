@@ -101,34 +101,6 @@ export default function Home() {
             </div>
           </div>
         </section>
-
-        {/* Quick Setup Section */}
-        <section className="py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500 mb-4">Quick Setup</h2>
-              <p className="text-lg text-gray-600 dark:text-gray-200">Get started with X Reply Agent in minutes</p>
-            </div>
-            <div className="relative overflow-hidden rounded-xl bg-white/90 dark:bg-gray-800/80 backdrop-blur-sm shadow-lg border border-gray-100/50 dark:border-gray-700/50 p-6">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-cyan-500/5 dark:from-blue-500/10 dark:to-cyan-500/10" />
-              <div className="relative">
-                <pre className="whitespace-pre-wrap break-words rounded-lg bg-gray-50 dark:bg-gray-900/50 p-4 text-sm">
-                  <code className="language-bash">
-                    {`# Clone the repository
-git clone https://github.com/DogukanGun/XReplyAgent.git
-
-# Install dependencies
-cd XReplyAgent
-npm install
-
-# Start the development server
-npm run dev`}
-                  </code>
-                </pre>
-              </div>
-            </div>
-          </div>
-        </section>
       </div>
 
 
