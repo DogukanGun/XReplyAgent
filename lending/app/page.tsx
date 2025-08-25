@@ -49,6 +49,36 @@ export default function Home() {
                   </svg>
                   GitHub
                 </a>
+                <a
+                  href="https://www.loom.com/share/4c7e2e2517da4fdab13bc46972e102d1?sid=4226f2fd-a5ab-49af-9e2e-b6694a423d9d"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-gradient-to-r from-purple-600 to-pink-500 hover:from-purple-700 hover:to-pink-600 transition duration-150 ease-in-out shadow-lg hover:shadow-xl"
+                >
+                  Watch Demo
+                </a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Demo Section */}
+        <section className="pt-10 sm:pt-12 pb-20">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-cyan-500 mb-4">Demo</h2>
+            </div>
+            <div className="relative rounded-xl overflow-hidden shadow-2xl dark:shadow-cyan-500/20 bg-gradient-to-br from-gray-900 to-gray-800">
+              <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-cyan-500/10 dark:from-blue-500/20 dark:to-cyan-500/20 pointer-events-none" />
+              <div className="relative w-full h-0 pb-[56.25%]">
+                <iframe
+                  src="https://www.loom.com/embed/4c7e2e2517da4fdab13bc46972e102d1?sid=4226f2fd-a5ab-49af-9e2e-b6694a423d9d"
+                  className="absolute top-0 left-0 w-full h-full"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  title="XReplyAgent Demo"
+                />
               </div>
             </div>
           </div>
