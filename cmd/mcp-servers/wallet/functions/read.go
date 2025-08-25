@@ -16,7 +16,7 @@ func (wf *WalletFunctions) ReadUserWallet() (string, error) {
 	}
 	var user []User
 	ack := mg.Read(wf.MongoConnection, bson.D{{Key: "twitter_id", Value: wf.TwitterId}}, &user)
-	if ack {
+	if ack && len(user) > 0 {
 		return user[0].PublicKey, nil
 	}
 	return "", errors.New("user not found")

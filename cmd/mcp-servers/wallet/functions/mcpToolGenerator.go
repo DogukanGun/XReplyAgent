@@ -24,5 +24,9 @@ func (wf *WalletFunctions) GenerateEndpointTools() []types.ToolInfo {
 	transferAssetTool, transferAssetHandler := wf.GenerateTransferAssetTool()
 	tools = append(tools, types.ToolInfo{Tool: transferAssetTool, Handler: transferAssetHandler})
 
+	// Wallet Balance
+	walletBalanceTool, walletBalanceHandler := wf.GenerateGetWalletBalanceTool()
+	tools = append(tools, types.ToolInfo{Tool: walletBalanceTool, Handler: walletBalanceHandler})
+
 	return tools
 }
