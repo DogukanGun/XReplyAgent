@@ -5,7 +5,7 @@ import { z } from "zod"
 import * as services from "../services"
 import { getAddressFromPrivateKey } from "../services"
 import { mcpToolRes } from "../../utils/helper.ts"
-import { networkParam, privateKeyParam } from "./common.ts"
+import { networkParam } from "./common.ts"
 import { withTwitterAuth } from "../../middleware/twitter.ts"
 
 export function registerAccountTools(server: McpServer) {
@@ -19,7 +19,7 @@ export function registerAccountTools(server: McpServer) {
         .string()
         .optional()
         .describe("The address of the account to get balance for"),
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, address, privateKey }) => {
       try {

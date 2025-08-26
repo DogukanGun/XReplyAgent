@@ -4,7 +4,7 @@ import { z } from "zod"
 
 import * as services from "../services"
 import { mcpToolRes } from "../../utils/helper.ts"
-import { networkParam, privateKeyParam } from "./common.ts"
+import { networkParam } from "./common.ts"
 import { withTwitterAuth } from "../../middleware/twitter.ts"
 
 export function registerPaymentTools(server: McpServer) {
@@ -20,7 +20,7 @@ export function registerPaymentTools(server: McpServer) {
         .describe(
           "The address of the payment account to get. If not provided, will use the private key to get the payment account."
         ),
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, address, privateKey }) => {
       try {
@@ -41,7 +41,7 @@ export function registerPaymentTools(server: McpServer) {
     "Create a new payment account",
     {
       network: networkParam,
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, privateKey }) => {
       try {
@@ -64,7 +64,7 @@ export function registerPaymentTools(server: McpServer) {
       network: networkParam,
       to: z.string().describe("The payment account address to deposit to"),
       amount: z.string().describe("The amount to deposit (in BNB)"),
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, to, amount, privateKey }) => {
       try {
@@ -88,7 +88,7 @@ export function registerPaymentTools(server: McpServer) {
       network: networkParam,
       from: z.string().describe("The payment account address to withdraw from"),
       amount: z.string().describe("The amount to withdraw (in BNB)"),
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, from, amount, privateKey }) => {
       try {

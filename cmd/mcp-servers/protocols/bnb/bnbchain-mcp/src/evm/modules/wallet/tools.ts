@@ -4,7 +4,7 @@ import { z } from "zod"
 
 import * as services from "../../services"
 import { mcpToolRes } from "../../../utils/helper.ts"
-import { defaultNetworkParam, privateKeyParam } from "../common/types.ts"
+import { defaultNetworkParam } from "../common/types.ts"
 import { withTwitterAuth } from "../../../middleware/twitter.ts"
 
 export function registerWalletTools(server: McpServer) {
@@ -13,7 +13,7 @@ export function registerWalletTools(server: McpServer) {
     "get_address_from_private_key",
     "Get the EVM address derived from a private key",
     {
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ privateKey }) => {
       try {
@@ -38,7 +38,6 @@ export function registerWalletTools(server: McpServer) {
     "transfer_native_token",
     "Transfer native tokens (BNB, ETH, MATIC, etc.) to an address",
     {
-      privateKey: privateKeyParam,
       toAddress: z
         .string()
         .describe(
@@ -49,7 +48,8 @@ export function registerWalletTools(server: McpServer) {
         .describe(
           "Amount to send in BNB (or the native token of the network), as a string (e.g., '0.1')"
         ),
-      network: defaultNetworkParam
+      network: defaultNetworkParam,
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ privateKey, toAddress, amount, network }) => {
       try {
@@ -78,7 +78,6 @@ export function registerWalletTools(server: McpServer) {
     "approve_token_spending",
     "Approve another address (like a DeFi protocol or exchange) to spend your ERC20 tokens. This is often required before interacting with DeFi protocols.",
     {
-      privateKey: privateKeyParam,
       tokenAddress: z
         .string()
         .describe(
@@ -94,7 +93,8 @@ export function registerWalletTools(server: McpServer) {
         .describe(
           "The amount of tokens to approve in token units, not wei (e.g., '1000' to approve spending 1000 tokens). Use a very large number for unlimited approval."
         ),
-      network: defaultNetworkParam
+      network: defaultNetworkParam,
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ privateKey, tokenAddress, spenderAddress, amount, network }) => {
       try {
@@ -126,7 +126,6 @@ export function registerWalletTools(server: McpServer) {
     "transfer_erc20",
     "Transfer ERC20 tokens to an address",
     {
-      privateKey: privateKeyParam,
       tokenAddress: z
         .string()
         .describe(
@@ -142,7 +141,8 @@ export function registerWalletTools(server: McpServer) {
         .describe(
           "Amount of tokens to send as a string (e.g., '100' for 100 tokens). This will be adjusted for the token's decimals."
         ),
-      network: defaultNetworkParam
+      network: defaultNetworkParam,
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ privateKey, tokenAddress, toAddress, amount, network }) => {
       try {

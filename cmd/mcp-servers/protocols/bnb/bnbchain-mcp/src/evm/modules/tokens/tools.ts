@@ -5,7 +5,7 @@ import { z } from "zod"
 
 import * as services from "../../services"
 import { mcpToolRes } from "../../../utils/helper.ts"
-import { defaultNetworkParam, privateKeyParam } from "../common/types.ts"
+import { defaultNetworkParam } from "../common/types.ts"
 import { withTwitterAuth } from "../../../middleware/twitter.ts"
 
 export function registerTokenTools(server: McpServer) {
@@ -41,7 +41,7 @@ export function registerTokenTools(server: McpServer) {
         .string()
         .optional()
         .describe("The address to check balance for"),
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, address, privateKey }) => {
       try {
@@ -65,7 +65,7 @@ export function registerTokenTools(server: McpServer) {
       tokenAddress: z.string().describe("The ERC20 token contract address"),
       address: z.string().describe("The address to check balance for"),
       network: defaultNetworkParam,
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, tokenAddress, address, privateKey }) => {
       try {
@@ -90,7 +90,7 @@ export function registerTokenTools(server: McpServer) {
       name: z.string().describe("The name of the token"),
       symbol: z.string().describe("The symbol of the token"),
       network: defaultNetworkParam,
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, name, symbol, privateKey }) => {
       try {

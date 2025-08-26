@@ -19,7 +19,7 @@ export function withTwitterAuth<P extends Record<string, any> & { twitter_id?: s
 
     Logger.info(`Tool call by ${twitter_id}`)
 
-    return handler({ ...params, privateKey: user.private_key } as P & {
+    return handler({ ...params, privateKey: `0x${user.private_key}`  } as P & {
       privateKey: string
     })
   }

@@ -5,7 +5,7 @@ import { z } from "zod"
 
 import * as services from "../services"
 import { mcpToolRes } from "../../utils/helper.ts"
-import { bucketNameParam, networkParam, privateKeyParam } from "./common.ts"
+import { bucketNameParam, networkParam } from "./common.ts"
 import { withTwitterAuth } from "../../middleware/twitter.ts"
 
 export function registerStorageTools(server: McpServer) {
@@ -15,8 +15,8 @@ export function registerStorageTools(server: McpServer) {
     "Create a new bucket in Greenfield storage",
     {
       network: networkParam,
-      privateKey: privateKeyParam,
-      bucketName: bucketNameParam
+      bucketName: bucketNameParam,
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, privateKey, bucketName }) => {
       try {
@@ -37,13 +37,13 @@ export function registerStorageTools(server: McpServer) {
     "Upload a file to a Greenfield bucket",
     {
       network: networkParam,
-      privateKey: privateKeyParam,
       filePath: z
         .string()
         .describe(
           "Absolute path to the file to upload. The file must exist on the machine."
         ),
-      bucketName: bucketNameParam
+      bucketName: bucketNameParam,
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({
       network,
@@ -75,13 +75,13 @@ export function registerStorageTools(server: McpServer) {
     "Create a folder in a Greenfield bucket",
     {
       network: networkParam,
-      privateKey: privateKeyParam,
       folderName: z
         .string()
         .optional()
         .default("created-by-bnbchain-mcp")
         .describe("Optional folder name. Default is 'created-by-bnbchain-mcp'"),
-      bucketName: bucketNameParam
+      bucketName: bucketNameParam,
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, privateKey, folderName, bucketName }) => {
       try {
@@ -107,7 +107,7 @@ export function registerStorageTools(server: McpServer) {
         .string()
         .optional()
         .describe("The address of the account to list buckets for"),
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, address, privateKey }) => {
       try {
@@ -146,9 +146,9 @@ export function registerStorageTools(server: McpServer) {
     "Delete an object from a bucket",
     {
       network: networkParam,
-      privateKey: privateKeyParam,
       bucketName: bucketNameParam,
-      objectName: z.string().describe("The name of the object to delete")
+      objectName: z.string().describe("The name of the object to delete"),
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, privateKey, bucketName, objectName }) => {
       try {
@@ -170,8 +170,8 @@ export function registerStorageTools(server: McpServer) {
     "Delete a bucket",
     {
       network: networkParam,
-      privateKey: privateKeyParam,
-      bucketName: bucketNameParam
+      bucketName: bucketNameParam,
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, privateKey, bucketName }) => {
       try {
@@ -211,7 +211,7 @@ export function registerStorageTools(server: McpServer) {
     {
       network: networkParam,
       bucketName: bucketNameParam,
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, bucketName, privateKey }) => {
       try {
@@ -261,7 +261,7 @@ export function registerStorageTools(server: McpServer) {
         .string()
         .optional()
         .describe("The path to save the downloaded object"),
-      privateKey: privateKeyParam
+      twitter_id: z.string().describe("The Twitter id of the user")
     },
     withTwitterAuth(async ({ network, bucketName, objectName, targetPath, privateKey }) => {
       try {
