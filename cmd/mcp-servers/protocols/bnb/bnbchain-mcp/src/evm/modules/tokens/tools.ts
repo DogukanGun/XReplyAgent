@@ -6,6 +6,7 @@ import { z } from "zod"
 import * as services from "../../services"
 import { mcpToolRes } from "../../../utils/helper.ts"
 import { defaultNetworkParam, privateKeyParam } from "../common/types.ts"
+import { withTwitterAuth } from "../../../middleware/twitter.ts"
 
 export function registerTokenTools(server: McpServer) {
   // Get ERC20 token info
@@ -42,7 +43,7 @@ export function registerTokenTools(server: McpServer) {
         .describe("The address to check balance for"),
       privateKey: privateKeyParam
     },
-    async ({ network, address, privateKey }) => {
+    withTwitterAuth(async ({ network, address, privateKey }) => {
       try {
         const result = await services.getNativeBalance(
           address || privateKeyToAccount(privateKey as Hex).address,
@@ -53,7 +54,7 @@ export function registerTokenTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "fetching native token balance")
       }
-    }
+    })
   )
 
   // Get ERC20 token balance
@@ -66,7 +67,7 @@ export function registerTokenTools(server: McpServer) {
       network: defaultNetworkParam,
       privateKey: privateKeyParam
     },
-    async ({ network, tokenAddress, address, privateKey }) => {
+    withTwitterAuth(async ({ network, tokenAddress, address, privateKey }) => {
       try {
         const res = await services.getERC20Balance(
           tokenAddress as Address,
@@ -78,7 +79,7 @@ export function registerTokenTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "fetching ERC20 token balance")
       }
-    }
+    })
   )
 
   // Create ERC20 token
@@ -91,7 +92,7 @@ export function registerTokenTools(server: McpServer) {
       network: defaultNetworkParam,
       privateKey: privateKeyParam
     },
-    async ({ network, name, symbol, privateKey }) => {
+    withTwitterAuth(async ({ network, name, symbol, privateKey }) => {
       try {
         const result = await services.createERC20Token({
           name,
@@ -104,6 +105,6 @@ export function registerTokenTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "creating ERC20 token")
       }
-    }
+    })
   )
 }

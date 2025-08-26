@@ -6,6 +6,7 @@ import * as services from "../services"
 import { getAddressFromPrivateKey } from "../services"
 import { mcpToolRes } from "../../utils/helper.ts"
 import { networkParam, privateKeyParam } from "./common.ts"
+import { withTwitterAuth } from "../../middleware/twitter.ts"
 
 export function registerAccountTools(server: McpServer) {
   // Get account balance
@@ -20,7 +21,7 @@ export function registerAccountTools(server: McpServer) {
         .describe("The address of the account to get balance for"),
       privateKey: privateKeyParam
     },
-    async ({ network, address, privateKey }) => {
+    withTwitterAuth(async ({ network, address, privateKey }) => {
       try {
         const balance = await services.getAccountBalance(network, {
           address: address || getAddressFromPrivateKey(privateKey as Hex)
@@ -29,7 +30,7 @@ export function registerAccountTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "fetching account balance")
       }
-    }
+    })
   )
 
   // Get all storage providers

@@ -5,6 +5,7 @@ import { z } from "zod"
 import * as services from "../../services"
 import { mcpToolRes } from "../../../utils/helper.ts"
 import { defaultNetworkParam, privateKeyParam } from "../common/types.ts"
+import { withTwitterAuth } from "../../../middleware/twitter.ts"
 
 export function registerWalletTools(server: McpServer) {
   // Get address from private key
@@ -14,7 +15,7 @@ export function registerWalletTools(server: McpServer) {
     {
       privateKey: privateKeyParam
     },
-    async ({ privateKey }) => {
+    withTwitterAuth(async ({ privateKey }) => {
       try {
         // Ensure the private key has 0x prefix
         const formattedKey = privateKey.startsWith("0x")
@@ -29,7 +30,7 @@ export function registerWalletTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "deriving address from private key")
       }
-    }
+    })
   )
 
   // Transfer native token
@@ -50,7 +51,7 @@ export function registerWalletTools(server: McpServer) {
         ),
       network: defaultNetworkParam
     },
-    async ({ privateKey, toAddress, amount, network }) => {
+    withTwitterAuth(async ({ privateKey, toAddress, amount, network }) => {
       try {
         const hash = await services.transferETH(
           privateKey,
@@ -69,7 +70,7 @@ export function registerWalletTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "transferring native token")
       }
-    }
+    })
   )
 
   // Approve ERC20 token spending
@@ -95,7 +96,7 @@ export function registerWalletTools(server: McpServer) {
         ),
       network: defaultNetworkParam
     },
-    async ({ privateKey, tokenAddress, spenderAddress, amount, network }) => {
+    withTwitterAuth(async ({ privateKey, tokenAddress, spenderAddress, amount, network }) => {
       try {
         const result = await services.approveERC20(
           tokenAddress,
@@ -117,7 +118,7 @@ export function registerWalletTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "approving token spending")
       }
-    }
+    })
   )
 
   // Transfer ERC20 tokens
@@ -143,7 +144,7 @@ export function registerWalletTools(server: McpServer) {
         ),
       network: defaultNetworkParam
     },
-    async ({ privateKey, tokenAddress, toAddress, amount, network }) => {
+    withTwitterAuth(async ({ privateKey, tokenAddress, toAddress, amount, network }) => {
       try {
         const result = await services.transferERC20(
           tokenAddress,
@@ -165,6 +166,6 @@ export function registerWalletTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "transferring tokens")
       }
-    }
+    })
   )
 }

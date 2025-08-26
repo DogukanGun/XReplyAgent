@@ -5,6 +5,7 @@ import { z } from "zod"
 import * as services from "../services"
 import { mcpToolRes } from "../../utils/helper.ts"
 import { networkParam, privateKeyParam } from "./common.ts"
+import { withTwitterAuth } from "../../middleware/twitter.ts"
 
 export function registerPaymentTools(server: McpServer) {
   // get payment account
@@ -21,7 +22,7 @@ export function registerPaymentTools(server: McpServer) {
         ),
       privateKey: privateKeyParam
     },
-    async ({ network, address, privateKey }) => {
+    withTwitterAuth(async ({ network, address, privateKey }) => {
       try {
         const result = await services.getPaymentAccounts(network, {
           address,
@@ -31,7 +32,7 @@ export function registerPaymentTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "getting payment account")
       }
-    }
+    })
   )
 
   // Create payment account
@@ -42,7 +43,7 @@ export function registerPaymentTools(server: McpServer) {
       network: networkParam,
       privateKey: privateKeyParam
     },
-    async ({ network, privateKey }) => {
+    withTwitterAuth(async ({ network, privateKey }) => {
       try {
         const result = await services.createPaymentAccount(
           network,
@@ -52,7 +53,7 @@ export function registerPaymentTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "creating payment account")
       }
-    }
+    })
   )
 
   // Deposit to payment account
@@ -65,7 +66,7 @@ export function registerPaymentTools(server: McpServer) {
       amount: z.string().describe("The amount to deposit (in BNB)"),
       privateKey: privateKeyParam
     },
-    async ({ network, to, amount, privateKey }) => {
+    withTwitterAuth(async ({ network, to, amount, privateKey }) => {
       try {
         const result = await services.depositToPaymentAccount(network, {
           to,
@@ -76,7 +77,7 @@ export function registerPaymentTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "depositing to payment account")
       }
-    }
+    })
   )
 
   // Withdraw from payment account
@@ -89,7 +90,7 @@ export function registerPaymentTools(server: McpServer) {
       amount: z.string().describe("The amount to withdraw (in BNB)"),
       privateKey: privateKeyParam
     },
-    async ({ network, from, amount, privateKey }) => {
+    withTwitterAuth(async ({ network, from, amount, privateKey }) => {
       try {
         const result = await services.withdrawFromPaymentAccount(network, {
           from,
@@ -100,7 +101,7 @@ export function registerPaymentTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "withdrawing from payment account")
       }
-    }
+    })
   )
 
   // Disable refund for payment account

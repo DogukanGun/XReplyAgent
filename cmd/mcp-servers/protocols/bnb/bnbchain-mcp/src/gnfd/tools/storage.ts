@@ -6,6 +6,7 @@ import { z } from "zod"
 import * as services from "../services"
 import { mcpToolRes } from "../../utils/helper.ts"
 import { bucketNameParam, networkParam, privateKeyParam } from "./common.ts"
+import { withTwitterAuth } from "../../middleware/twitter.ts"
 
 export function registerStorageTools(server: McpServer) {
   // Create bucket
@@ -17,7 +18,7 @@ export function registerStorageTools(server: McpServer) {
       privateKey: privateKeyParam,
       bucketName: bucketNameParam
     },
-    async ({ network, privateKey, bucketName }) => {
+    withTwitterAuth(async ({ network, privateKey, bucketName }) => {
       try {
         const result = await services.createBucket(network, {
           privateKey: privateKey as Hex,
@@ -27,7 +28,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "creating bucket")
       }
-    }
+    })
   )
 
   // Create file
@@ -44,7 +45,7 @@ export function registerStorageTools(server: McpServer) {
         ),
       bucketName: bucketNameParam
     },
-    async ({
+    withTwitterAuth(async ({
       network,
       privateKey,
       filePath,
@@ -65,7 +66,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "creating file")
       }
-    }
+    })
   )
 
   // Create folder
@@ -82,7 +83,7 @@ export function registerStorageTools(server: McpServer) {
         .describe("Optional folder name. Default is 'created-by-bnbchain-mcp'"),
       bucketName: bucketNameParam
     },
-    async ({ network, privateKey, folderName, bucketName }) => {
+    withTwitterAuth(async ({ network, privateKey, folderName, bucketName }) => {
       try {
         const result = await services.createFolder(network, {
           privateKey: privateKey as Hex,
@@ -93,7 +94,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "creating folder")
       }
-    }
+    })
   )
 
   // List buckets
@@ -108,7 +109,7 @@ export function registerStorageTools(server: McpServer) {
         .describe("The address of the account to list buckets for"),
       privateKey: privateKeyParam
     },
-    async ({ network, address, privateKey }) => {
+    withTwitterAuth(async ({ network, address, privateKey }) => {
       try {
         const result = await services.listBuckets(network, {
           privateKey: privateKey as Hex,
@@ -118,7 +119,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "listing buckets")
       }
-    }
+    })
   )
 
   // List objects
@@ -149,7 +150,7 @@ export function registerStorageTools(server: McpServer) {
       bucketName: bucketNameParam,
       objectName: z.string().describe("The name of the object to delete")
     },
-    async ({ network, privateKey, bucketName, objectName }) => {
+    withTwitterAuth(async ({ network, privateKey, bucketName, objectName }) => {
       try {
         const result = await services.deleteObject(network, {
           privateKey: privateKey as Hex,
@@ -160,7 +161,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "deleting object")
       }
-    }
+    })
   )
 
   // Delete bucket
@@ -172,7 +173,7 @@ export function registerStorageTools(server: McpServer) {
       privateKey: privateKeyParam,
       bucketName: bucketNameParam
     },
-    async ({ network, privateKey, bucketName }) => {
+    withTwitterAuth(async ({ network, privateKey, bucketName }) => {
       try {
         const result = await services.deleteBucket(network, {
           privateKey: privateKey as Hex,
@@ -182,7 +183,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "deleting bucket")
       }
-    }
+    })
   )
 
   // Get bucket info
@@ -212,7 +213,7 @@ export function registerStorageTools(server: McpServer) {
       bucketName: bucketNameParam,
       privateKey: privateKeyParam
     },
-    async ({ network, bucketName, privateKey }) => {
+    withTwitterAuth(async ({ network, bucketName, privateKey }) => {
       try {
         const result = await services.getBucketFullInfo(
           network,
@@ -223,7 +224,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "getting bucket full info")
       }
-    }
+    })
   )
 
   // Get object info
@@ -262,7 +263,7 @@ export function registerStorageTools(server: McpServer) {
         .describe("The path to save the downloaded object"),
       privateKey: privateKeyParam
     },
-    async ({ network, bucketName, objectName, targetPath, privateKey }) => {
+    withTwitterAuth(async ({ network, bucketName, objectName, targetPath, privateKey }) => {
       try {
         const result = await services.downloadObject(network, {
           bucketName,
@@ -274,6 +275,6 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "downloading object")
       }
-    }
+    })
   )
 }

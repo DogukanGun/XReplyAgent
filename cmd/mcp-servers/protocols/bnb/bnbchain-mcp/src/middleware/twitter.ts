@@ -1,0 +1,63 @@
+import Logger from "../utils/logger.js"
+import { MongoClient } from "mongodb"
+
+type ToolHandler<P, R> = (params: P) => Promise<R>
+
+export function withTwitterAuth<P extends Record<string, any> & { twitter_id?: string }, R>(
+  handler: (params: P & { privateKey: string }) => Promise<R>
+): ToolHandler<P, R> {
+  return async (params: P) => {
+    const { twitter_id } = params
+    if (!twitter_id) {
+      throw new Error("twitter_id is required for all MCP tool calls.")
+    }
+
+    const user = await getUserByTwitterId(twitter_id)
+    if (!user) {
+      throw new Error(`No user found for twitter_id=${twitter_id}`)
+    }
+
+    Logger.info(`Tool call by ${twitter_id}`)
+
+    return handler({ ...params, privateKey: user.private_key } as P & {
+      privateKey: string
+    })
+  }
+}
+
+
+async function getUserByTwitterId(twitterId: string) : Promise<{ twitter_id: string, public_key: string, private_key: string } | null> {
+    try {
+      const client = await getMongoClient()
+      const db = client.db("User")
+      const collection = db.collection("Wallet")
+  
+      const user = await collection.findOne<{ 
+        twitter_id: string; 
+        public_key: string; 
+        private_key: string; 
+        username?: string 
+      }>({ twitter_id: twitterId })
+  
+      if (!user) {
+        return null
+      }
+  
+      return {
+        twitter_id: user.twitter_id,
+        public_key: user.public_key,
+        private_key: user.private_key,
+      }
+    } catch (error) {
+      Logger.error("Error fetching user by twitter_id:", error)
+      return null
+    }
+}
+
+async function getMongoClient() : Promise<MongoClient> {
+    const uri = process.env.MONGO_URI || "mongodb://localhost:27017"
+    const client = new MongoClient(uri)
+    await client.connect()
+    return client
+}
+  
