@@ -173,11 +173,29 @@ func grDiscoveredTools(gr *mcpHTTP) ([]tools.Tool, error) {
 	return out, nil
 }
 
+func setupFromConfigFile() ([]tools.Tool, error) {
+	configs := []MCPServerConfig{
+		{
+			Name:    "bnb",
+			URL:     os.Getenv("BNB_AGENT_MCP_HTTP"),
+			Timeout: 60 * time.Second,
+		},
+		{
+			Name:    "wallet",
+			URL:     os.Getenv("WALLET_MCP_HTTP"),
+			Timeout: 60 * time.Second,
+		},
+	}
+
+	return SetupMCPTools(configs)
+}
+
 func main() {
 	cgURL := os.Getenv("CG_MCP_HTTP")
 	xURL := os.Getenv("X_MCP_HTTP")
 	goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
-	if cgURL == "" || xURL == "" || goldrushURL == "" {
+	bnbAgent := os.Getenv("BNB_AGENT_MCP_HTTP")
+	if cgURL == "" || xURL == "" || goldrushURL == "" || bnbAgent == "" {
 		fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
 		os.Exit(1)
 	}
@@ -203,6 +221,11 @@ func main() {
 	cg := newMCP(cgURL)
 	x := newMCP(xURL)
 	gr := newMCP(goldrushURL)
+	mcpServerTools, err := setupFromConfigFile()
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "failed to discover McpServer tools:", err)
+		os.Exit(1)
+	}
 
 	cgTools, err := cgDiscoveredTools(cg)
 	if err != nil {
@@ -218,6 +241,7 @@ func main() {
 	toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+1)
 	toolsList = append(toolsList, cgTools...)
 	toolsList = append(toolsList, grTools...)
+	toolsList = append(toolsList, mcpServerTools...)
 	toolsList = append(toolsList, xTool{client: x})
 	model := os.Getenv("OPENAI_MODEL")
 	if model == "" {
