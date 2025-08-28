@@ -9,6 +9,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 	"time"
 
@@ -147,12 +148,37 @@ func cgDiscoveredTools(cg *mcpHTTP) ([]tools.Tool, error) {
 	return out, nil
 }
 
+// grDiscoveredTools discovers tools exposed by the GoldRush HTTP MCP server and
+// converts them to LangChainGo tools for the agent.
+func grDiscoveredTools(gr *mcpHTTP) ([]tools.Tool, error) {
+	raw, err := gr.listTools()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]tools.Tool, 0, len(raw))
+	for _, t := range raw {
+		name, _ := t["name"].(string)
+		if name == "" {
+			continue
+		}
+		description, _ := t["description"].(string)
+		// include inputSchema (if any) as a compact JSON to guide the LLM
+		if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
+			if b, err := json.Marshal(schemaVal); err == nil {
+				description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
+			}
+		}
+		out = append(out, genericMCPTool{client: gr, name: name, desc: description})
+	}
+	return out, nil
+}
+
 func main() {
 	cgURL := os.Getenv("CG_MCP_HTTP")
 	xURL := os.Getenv("X_MCP_HTTP")
 	goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
 	if cgURL == "" || xURL == "" || goldrushURL == "" {
-		fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp) and X_MCP_HTTP (e.g., http://localhost:8081/mcp)")
+		fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
 		os.Exit(1)
 	}
 
@@ -176,14 +202,23 @@ func main() {
 
 	cg := newMCP(cgURL)
 	x := newMCP(xURL)
+	gr := newMCP(goldrushURL)
 
 	cgTools, err := cgDiscoveredTools(cg)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to discover CG tools:", err)
 		os.Exit(1)
 	}
-	toolsList := append(cgTools, xTool{client: x})
-	//TODO add goldrush mcp server
+	grTools, err := grDiscoveredTools(gr)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
+		os.Exit(1)
+	}
+
+	toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+1)
+	toolsList = append(toolsList, cgTools...)
+	toolsList = append(toolsList, grTools...)
+	toolsList = append(toolsList, xTool{client: x})
 	model := os.Getenv("OPENAI_MODEL")
 	if model == "" {
 		model = "gpt-4.1-mini"
@@ -200,7 +235,6 @@ func main() {
 		toolsList,
 		agents.ZeroShotReactDescription,
 		agents.WithMaxIterations(8),
-		agents.WithReturnIntermediateSteps(),
 		agents.WithParserErrorHandler(peh),
 	)
 	if err != nil {
@@ -210,23 +244,73 @@ func main() {
 
 	prompt := q
 	if strings.TrimSpace(*replyTo) != "" {
-		prompt = fmt.Sprintf("%s Answer this question using CoinGecko MCP. Then reply to tweet %s using x_post_reply.", prompt, strings.TrimSpace(*replyTo))
+		prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. Then reply to tweet %s using x_post_reply.", prompt, strings.TrimSpace(*replyTo))
 	}
 
 	ctx := context.Background()
 	out, err := exec.Call(ctx, map[string]any{"input": prompt})
 	if err != nil {
-		// Non-fatal: print best effort output or last observation, exit 0
+		// Print best effort output or last observation, but exit non-zero so callers can detect failure
 		if steps, ok := out["intermediateSteps"].([]schema.AgentStep); ok && len(steps) > 0 {
 			fmt.Println(steps[len(steps)-1].Observation)
-			return
+			os.Exit(1)
 		}
 		if v, ok := out["output"].(string); ok && v != "" {
 			fmt.Println(v)
-			return
+			os.Exit(1)
 		}
 		fmt.Println(err.Error())
-		return
+		os.Exit(1)
 	}
-	fmt.Println(out["output"])
+
+	// Extract and sanitize final answer
+	answer, _ := out["output"].(string)
+	answer = sanitizeFinalAnswer(answer)
+
+	// If a reply target was given, post the agent's answer using the X MCP directly.
+	if strings.TrimSpace(*replyTo) != "" {
+		if answer == "" {
+			fmt.Fprintln(os.Stderr, "agent produced empty answer; cannot post to X")
+			os.Exit(1)
+		}
+		// best-effort truncate to fit X limits
+		runes := []rune(answer)
+		const maxTweetLen = 270
+		if len(runes) > maxTweetLen {
+			answer = string(runes[:maxTweetLen]) + "…"
+		}
+		if _, postErr := x.call("twitter.post_reply", map[string]any{
+			"in_reply_to_tweet_id": strings.TrimSpace(*replyTo),
+			"text":                 answer,
+		}); postErr != nil {
+			fmt.Fprintln(os.Stderr, "failed to post via X:", postErr)
+			os.Exit(1)
+		}
+	}
+
+	fmt.Println(answer)
+}
+
+// sanitizeFinalAnswer removes ReAct/tool-calling artifacts so only the answer remains
+func sanitizeFinalAnswer(s string) string {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return s
+	}
+	// Remove common prefixes
+	s = strings.TrimPrefix(s, "Final Answer:")
+	s = strings.TrimSpace(s)
+	// Remove obvious tool/action lines
+	re := regexp.MustCompile(`(?i)^(action|action input|observation|thought|tool|intermediate steps)\s*:`)
+	lines := strings.Split(s, "\n")
+	filtered := make([]string, 0, len(lines))
+	for _, ln := range lines {
+		if re.MatchString(strings.TrimSpace(ln)) {
+			continue
+		}
+		filtered = append(filtered, ln)
+	}
+	s = strings.TrimSpace(strings.Join(filtered, "\n"))
+	s = strings.ReplaceAll(s, "```", "")
+	return strings.TrimSpace(s)
 }
