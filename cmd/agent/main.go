@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"github.com/gin-gonic/gin"
 	"io"
 	"net/http"
 	"os"
@@ -22,6 +23,11 @@ import (
 type mcpHTTP struct {
 	base string
 	hc   *http.Client
+}
+
+// InputRequest defines the expected JSON body
+type InputRequest struct {
+	Input string `json:"input" binding:"required"`
 }
 
 func newMCP(base string) *mcpHTTP {
@@ -190,7 +196,11 @@ func setupFromConfigFile() ([]tools.Tool, error) {
 	return SetupMCPTools(configs)
 }
 
-func main() {
+func getReplyTo() *string {
+	return flag.String("reply-to", "", "tweet id to reply under using x_post_reply (optional)")
+}
+
+func askAgentAndGetXMcp(questionAsParam string) (string, *mcpHTTP) {
 	cgURL := os.Getenv("CG_MCP_HTTP")
 	xURL := os.Getenv("X_MCP_HTTP")
 	goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
@@ -201,7 +211,10 @@ func main() {
 	}
 
 	question := flag.String("q", "", "question to ask the agent (fallback: AGENT_INPUT or stdin)")
-	replyTo := flag.String("reply-to", "", "tweet id to reply under using x_post_reply (optional)")
+	if *question == "" {
+		*question = questionAsParam
+	}
+	replyTo := getReplyTo()
 	flag.Parse()
 
 	q := strings.TrimSpace(*question)
@@ -290,29 +303,66 @@ func main() {
 	// Extract and sanitize final answer
 	answer, _ := out["output"].(string)
 	answer = sanitizeFinalAnswer(answer)
+	return answer, x
+}
 
-	// If a reply target was given, post the agent's answer using the X MCP directly.
-	if strings.TrimSpace(*replyTo) != "" {
-		if answer == "" {
-			fmt.Fprintln(os.Stderr, "agent produced empty answer; cannot post to X")
-			os.Exit(1)
+func provideTester() {
+	r := gin.Default()
+
+	// POST /receive - accepts JSON { "input": "some string" }
+	r.POST("/receive", func(c *gin.Context) {
+		var req InputRequest
+		if err := c.ShouldBindJSON(&req); err != nil {
+			// Binding failed (missing or wrong type)
+			c.JSON(http.StatusBadRequest, gin.H{"error": "invalid request body, expected JSON { \"input\": " +
+				"\"string\" }"})
+			return
 		}
-		// best-effort truncate to fit X limits
-		runes := []rune(answer)
-		const maxTweetLen = 270
-		if len(runes) > maxTweetLen {
-			answer = string(runes[:maxTweetLen]) + "…"
-		}
-		if _, postErr := x.call("twitter.post_reply", map[string]any{
-			"in_reply_to_tweet_id": strings.TrimSpace(*replyTo),
-			"text":                 answer,
-		}); postErr != nil {
-			fmt.Fprintln(os.Stderr, "failed to post via X:", postErr)
-			os.Exit(1)
-		}
+
+		answer, _ := askAgentAndGetXMcp(req.Input)
+
+		c.JSON(http.StatusOK, gin.H{
+			"response": answer,
+			"length":   len(answer),
+		})
+	})
+
+	// Start server on port 8080
+	err := r.Run(":8080")
+	if err != nil {
+		panic(err)
 	}
+}
 
-	fmt.Println(answer)
+func main() {
+	testModeOn := os.Getenv("TEST_MODE")
+	if testModeOn == "YES" {
+		provideTester()
+	} else {
+		answer, x := askAgentAndGetXMcp("")
+		// If a reply target was given, post the agent's answer using the X MCP directly.
+		if strings.TrimSpace(*getReplyTo()) != "" {
+			if answer == "" {
+				fmt.Fprintln(os.Stderr, "agent produced empty answer; cannot post to X")
+				os.Exit(1)
+			}
+			// best-effort truncate to fit X limits
+			runes := []rune(answer)
+			const maxTweetLen = 270
+			if len(runes) > maxTweetLen {
+				answer = string(runes[:maxTweetLen]) + "…"
+			}
+			if _, postErr := x.call("twitter.post_reply", map[string]any{
+				"in_reply_to_tweet_id": strings.TrimSpace(*getReplyTo()),
+				"text":                 answer,
+			}); postErr != nil {
+				fmt.Fprintln(os.Stderr, "failed to post via X:", postErr)
+				os.Exit(1)
+			}
+		}
+
+		fmt.Println(answer)
+	}
 }
 
 // sanitizeFinalAnswer removes ReAct/tool-calling artifacts so only the answer remains
