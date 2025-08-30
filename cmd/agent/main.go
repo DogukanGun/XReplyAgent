@@ -183,31 +183,11 @@ func grDiscoveredTools(gr *mcpHTTP) ([]tools.Tool, error) {
 	return out, nil
 }
 
-func setupFromConfigFile() ([]tools.Tool, error) {
-	configs := []MCPServerConfig{
-		{
-			Name:    "bnb",
-			URL:     os.Getenv("BNB_AGENT_MCP_HTTP"),
-			Timeout: 60 * time.Second,
-		},
-		{
-			Name:    "wallet",
-			URL:     os.Getenv("WALLET_MCP_HTTP"),
-			Timeout: 60 * time.Second,
-		},
-	}
-
-	return SetupMCPTools(configs)
-}
-
-func getReplyTo() *string {
-	return flag.String("reply-to", "", "tweet id to reply under using x_post_reply (optional)")
-}
-
 func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	cgURL := os.Getenv("CG_MCP_HTTP")
 	xURL := os.Getenv("X_MCP_HTTP")
 	goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
+	walletMcpUrl := os.Getenv("WALLET_MCP_HTTP")
 	if cgURL == "" || xURL == "" || goldrushURL == "" {
 		fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
 	}
@@ -228,6 +208,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	cg := newMCP(cgURL)
 	x := newMCP(xURL)
 	gr := newMCP(goldrushURL)
+	wl := newMCP(walletMcpUrl)
 
 	// Initialize BNB proxy agent
 	bnbProxy := bnb.BnbProxy()
@@ -241,12 +222,17 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
 	}
+	wlTools, err := grDiscoveredTools(wl)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
+	}
 
 	toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+2)
 	toolsList = append(toolsList, cgTools...)
 	toolsList = append(toolsList, grTools...)
 	toolsList = append(toolsList, xTool{client: x})
 	toolsList = append(toolsList, bnbProxyTool)
+	toolsList = append(toolsList, wlTools...)
 	model := os.Getenv("OPENAI_MODEL")
 	if model == "" {
 		model = "gpt-4.1-mini"
