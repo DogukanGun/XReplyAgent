@@ -227,7 +227,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 		fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
 	}
 
-	toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+2)
+	toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+len(wlTools)+2)
 	toolsList = append(toolsList, cgTools...)
 	toolsList = append(toolsList, grTools...)
 	toolsList = append(toolsList, xTool{client: x})
@@ -317,7 +317,8 @@ func main() {
 		cgURL := os.Getenv("CG_MCP_HTTP")
 		xURL := os.Getenv("X_MCP_HTTP")
 		goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
-		if cgURL == "" || xURL == "" || goldrushURL == "" {
+		walletMcpUrl := os.Getenv("WALLET_MCP_HTTP")
+		if cgURL == "" || xURL == "" || goldrushURL == "" || walletMcpUrl == "" {
 			fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
 			os.Exit(1)
 		}
@@ -343,6 +344,7 @@ func main() {
 		cg := newMCP(cgURL)
 		x := newMCP(xURL)
 		gr := newMCP(goldrushURL)
+		wl := newMCP(walletMcpUrl)
 
 		// Initialize BNB proxy agent
 		bnbProxy := bnb.BnbProxy()
@@ -358,12 +360,18 @@ func main() {
 			fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
 			os.Exit(1)
 		}
+		wlTools, err := grDiscoveredTools(wl)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
+			os.Exit(1)
+		}
 
 		toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+1)
 		toolsList = append(toolsList, cgTools...)
 		toolsList = append(toolsList, grTools...)
 		toolsList = append(toolsList, xTool{client: x})
 		toolsList = append(toolsList, bnbProxyTool)
+		toolsList = append(toolsList, wlTools...)
 		model := os.Getenv("OPENAI_MODEL")
 		if model == "" {
 			model = "gpt-4.1-mini"
