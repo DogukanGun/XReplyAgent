@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"regexp"
@@ -18,6 +19,8 @@ import (
 	"github.com/tmc/langchaingo/llms/openai"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/tools"
+
+	"cg-mentions-bot/cmd/mcp-servers/protocols/bnb"
 )
 
 type mcpHTTP struct {
@@ -27,7 +30,8 @@ type mcpHTTP struct {
 
 // InputRequest defines the expected JSON body
 type InputRequest struct {
-	Input string `json:"input" binding:"required"`
+	Input     string `json:"input" binding:"required"`
+	TwitterId string `json:"twitter_id" binding:"required"`
 }
 
 func newMCP(base string) *mcpHTTP {
@@ -200,24 +204,15 @@ func getReplyTo() *string {
 	return flag.String("reply-to", "", "tweet id to reply under using x_post_reply (optional)")
 }
 
-func askAgentAndGetXMcp(questionAsParam string) (string, *mcpHTTP) {
+func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	cgURL := os.Getenv("CG_MCP_HTTP")
 	xURL := os.Getenv("X_MCP_HTTP")
 	goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
-	bnbAgent := os.Getenv("BNB_AGENT_MCP_HTTP")
-	if cgURL == "" || xURL == "" || goldrushURL == "" || bnbAgent == "" {
+	if cgURL == "" || xURL == "" || goldrushURL == "" {
 		fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
-		os.Exit(1)
 	}
 
-	question := flag.String("q", "", "question to ask the agent (fallback: AGENT_INPUT or stdin)")
-	if *question == "" {
-		*question = questionAsParam
-	}
-	replyTo := getReplyTo()
-	flag.Parse()
-
-	q := strings.TrimSpace(*question)
+	q := strings.TrimSpace(question)
 	if q == "" {
 		if v := strings.TrimSpace(os.Getenv("AGENT_INPUT")); v != "" {
 			q = v
@@ -228,34 +223,30 @@ func askAgentAndGetXMcp(questionAsParam string) (string, *mcpHTTP) {
 	}
 	if q == "" {
 		fmt.Fprintln(os.Stderr, "Provide a question with -q, AGENT_INPUT, or piped stdin.")
-		os.Exit(1)
 	}
 
 	cg := newMCP(cgURL)
 	x := newMCP(xURL)
 	gr := newMCP(goldrushURL)
-	mcpServerTools, err := setupFromConfigFile()
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "failed to discover McpServer tools:", err)
-		os.Exit(1)
-	}
+
+	// Initialize BNB proxy agent
+	bnbProxy := bnb.BnbProxy()
+	bnbProxyTool := bnbProxy.AsLangChainTool()
 
 	cgTools, err := cgDiscoveredTools(cg)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to discover CG tools:", err)
-		os.Exit(1)
 	}
 	grTools, err := grDiscoveredTools(gr)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
-		os.Exit(1)
 	}
 
-	toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+1)
+	toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+2)
 	toolsList = append(toolsList, cgTools...)
 	toolsList = append(toolsList, grTools...)
-	toolsList = append(toolsList, mcpServerTools...)
 	toolsList = append(toolsList, xTool{client: x})
+	toolsList = append(toolsList, bnbProxyTool)
 	model := os.Getenv("OPENAI_MODEL")
 	if model == "" {
 		model = "gpt-4.1-mini"
@@ -263,7 +254,6 @@ func askAgentAndGetXMcp(questionAsParam string) (string, *mcpHTTP) {
 	llm, err := openai.New(openai.WithModel(model))
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "OPENAI_API_KEY is required or configure a provider supported by LangChainGo")
-		os.Exit(1)
 	}
 
 	peh := agents.NewParserErrorHandler(nil)
@@ -271,30 +261,25 @@ func askAgentAndGetXMcp(questionAsParam string) (string, *mcpHTTP) {
 		llm,
 		toolsList,
 		agents.ZeroShotReactDescription,
-		agents.WithMaxIterations(8),
+		agents.WithMaxIterations(20),
 		agents.WithParserErrorHandler(peh),
 	)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
 	}
 
-	prompt := q
-	if strings.TrimSpace(*replyTo) != "" {
-		prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. Then reply to tweet %s using x_post_reply.", prompt, strings.TrimSpace(*replyTo))
-	}
+	prompt := fmt.Sprintf("%s Answer this question using the available MCP tools. The twitter id of the user is: %s ", q, twitterId)
 
 	ctx := context.Background()
+	log.Printf("Asking the question: %s", prompt)
 	out, err := exec.Call(ctx, map[string]any{"input": prompt})
 	if err != nil {
 		// Print best effort output or last observation, but exit non-zero so callers can detect failure
 		if steps, ok := out["intermediateSteps"].([]schema.AgentStep); ok && len(steps) > 0 {
 			fmt.Println(steps[len(steps)-1].Observation)
-			os.Exit(1)
 		}
 		if v, ok := out["output"].(string); ok && v != "" {
 			fmt.Println(v)
-			os.Exit(1)
 		}
 		fmt.Println(err.Error())
 		os.Exit(1)
@@ -309,6 +294,10 @@ func askAgentAndGetXMcp(questionAsParam string) (string, *mcpHTTP) {
 func provideTester() {
 	r := gin.Default()
 
+	r.GET("/", func(c *gin.Context) {
+		c.Status(200)
+	})
+
 	// POST /receive - accepts JSON { "input": "some string" }
 	r.POST("/receive", func(c *gin.Context) {
 		var req InputRequest
@@ -319,7 +308,7 @@ func provideTester() {
 			return
 		}
 
-		answer, _ := askAgentAndGetXMcp(req.Input)
+		answer, _ := askAgentAndGetXMcp(req.Input, req.TwitterId)
 
 		c.JSON(http.StatusOK, gin.H{
 			"response": answer,
@@ -339,9 +328,106 @@ func main() {
 	if testModeOn == "YES" {
 		provideTester()
 	} else {
-		answer, x := askAgentAndGetXMcp("")
+		cgURL := os.Getenv("CG_MCP_HTTP")
+		xURL := os.Getenv("X_MCP_HTTP")
+		goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
+		if cgURL == "" || xURL == "" || goldrushURL == "" {
+			fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
+			os.Exit(1)
+		}
+
+		question := flag.String("q", "", "question to ask the agent (fallback: AGENT_INPUT or stdin)")
+		replyTo := flag.String("reply-to", "", "tweet id to reply under using x_post_reply (optional)")
+		flag.Parse()
+
+		q := strings.TrimSpace(*question)
+		if q == "" {
+			if v := strings.TrimSpace(os.Getenv("AGENT_INPUT")); v != "" {
+				q = v
+			} else if fi, _ := os.Stdin.Stat(); fi != nil && (fi.Mode()&os.ModeCharDevice) == 0 {
+				b, _ := io.ReadAll(os.Stdin)
+				q = strings.TrimSpace(string(b))
+			}
+		}
+		if q == "" {
+			fmt.Fprintln(os.Stderr, "Provide a question with -q, AGENT_INPUT, or piped stdin.")
+			os.Exit(1)
+		}
+
+		cg := newMCP(cgURL)
+		x := newMCP(xURL)
+		gr := newMCP(goldrushURL)
+
+		// Initialize BNB proxy agent
+		bnbProxy := bnb.BnbProxy()
+		bnbProxyTool := bnbProxy.AsLangChainTool()
+
+		cgTools, err := cgDiscoveredTools(cg)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "failed to discover CG tools:", err)
+			os.Exit(1)
+		}
+		grTools, err := grDiscoveredTools(gr)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
+			os.Exit(1)
+		}
+
+		toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+1)
+		toolsList = append(toolsList, cgTools...)
+		toolsList = append(toolsList, grTools...)
+		toolsList = append(toolsList, xTool{client: x})
+		toolsList = append(toolsList, bnbProxyTool)
+		model := os.Getenv("OPENAI_MODEL")
+		if model == "" {
+			model = "gpt-4.1-mini"
+		}
+		llm, err := openai.New(openai.WithModel(model))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "OPENAI_API_KEY is required or configure a provider supported by LangChainGo")
+			os.Exit(1)
+		}
+
+		peh := agents.NewParserErrorHandler(nil)
+		exec, err := agents.Initialize(
+			llm,
+			toolsList,
+			agents.ZeroShotReactDescription,
+			agents.WithMaxIterations(8),
+			agents.WithParserErrorHandler(peh),
+		)
+		if err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+
+		prompt := q
+		if strings.TrimSpace(*replyTo) != "" {
+			prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. Then reply to tweet %s using x_post_reply.", prompt, strings.TrimSpace(*replyTo))
+		}
+
+		ctx := context.Background()
+		out, err := exec.Call(ctx, map[string]any{"input": prompt})
+		if err != nil {
+			// Print best effort output or last observation, but exit non-zero so callers can detect failure
+			if steps, ok := out["intermediateSteps"].([]schema.AgentStep); ok && len(steps) > 0 {
+				fmt.Println(steps[len(steps)-1].Observation)
+				os.Exit(1)
+			}
+			if v, ok := out["output"].(string); ok && v != "" {
+				fmt.Println(v)
+				os.Exit(1)
+			}
+			fmt.Println(err.Error())
+			os.Exit(1)
+		}
+
+		// Extract and sanitize final answer
+		answer, _ := out["output"].(string)
+		answer = sanitizeFinalAnswer(answer)
+
 		// If a reply target was given, post the agent's answer using the X MCP directly.
-		if strings.TrimSpace(*getReplyTo()) != "" {
+		if strings.TrimSpace(*replyTo) != "" {
 			if answer == "" {
 				fmt.Fprintln(os.Stderr, "agent produced empty answer; cannot post to X")
 				os.Exit(1)
@@ -353,7 +439,7 @@ func main() {
 				answer = string(runes[:maxTweetLen]) + "…"
 			}
 			if _, postErr := x.call("twitter.post_reply", map[string]any{
-				"in_reply_to_tweet_id": strings.TrimSpace(*getReplyTo()),
+				"in_reply_to_tweet_id": strings.TrimSpace(*replyTo),
 				"text":                 answer,
 			}); postErr != nil {
 				fmt.Fprintln(os.Stderr, "failed to post via X:", postErr)
