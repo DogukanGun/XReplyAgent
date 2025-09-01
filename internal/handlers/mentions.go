@@ -17,7 +17,7 @@ type MentionsHandler struct {
 	Ask    func(ctx context.Context, text string) (string, error)
 	Reply  func(ctx context.Context, in ReplyIn) error
 	// If set, uses the agent binary to both answer and post per mention.
-	AgentRun func(ctx context.Context, question string, replyTo string) (string, error)
+	AgentRun func(ctx context.Context, question string, replyTo string, twitterId string) (string, error)
 }
 
 // ReplyIn contains minimal info to reply to a tweet.
@@ -77,7 +77,7 @@ func (h MentionsHandler) Handle(w http.ResponseWriter, r *http.Request) {
 	for _, m := range mentions {
 		q := normalizeTweetText(m.Text)
 		if h.AgentRun != nil {
-			if _, err := h.AgentRun(r.Context(), q, m.TweetID); err != nil {
+			if _, err := h.AgentRun(r.Context(), q, m.TweetID, m.AuthorID); err != nil {
 				results = append(results, res{TweetID: m.TweetID, Posted: false, Error: err.Error()})
 			} else {
 				results = append(results, res{TweetID: m.TweetID, Posted: true})

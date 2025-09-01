@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	agent := BnbProxy()
+	agent := ProxyHandler()
 
 	ctx := context.Background()
 

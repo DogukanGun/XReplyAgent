@@ -211,7 +211,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	wl := newMCP(walletMcpUrl)
 
 	// Initialize BNB proxy agent
-	bnbProxy := bnb.BnbProxy()
+	bnbProxy := bnb.ProxyHandler()
 	bnbProxyTool := bnbProxy.AsLangChainTool()
 
 	cgTools, err := cgDiscoveredTools(cg)
@@ -325,6 +325,7 @@ func main() {
 
 		question := flag.String("q", "", "question to ask the agent (fallback: AGENT_INPUT or stdin)")
 		replyTo := flag.String("reply-to", "", "tweet id to reply under using x_post_reply (optional)")
+		flag.String("ti", "", "twitter id of the user that posts it")
 		flag.Parse()
 
 		q := strings.TrimSpace(*question)
@@ -347,7 +348,7 @@ func main() {
 		wl := newMCP(walletMcpUrl)
 
 		// Initialize BNB proxy agent
-		bnbProxy := bnb.BnbProxy()
+		bnbProxy := bnb.ProxyHandler()
 		bnbProxyTool := bnbProxy.AsLangChainTool()
 
 		cgTools, err := cgDiscoveredTools(cg)
@@ -383,6 +384,7 @@ func main() {
 		}
 
 		peh := agents.NewParserErrorHandler(nil)
+		log.Print("Starting agent with ", toolsList)
 		exec, err := agents.Initialize(
 			llm,
 			toolsList,

@@ -9,14 +9,14 @@ import (
 )
 
 // Runner invokes the agent executable with a question and optional reply-to tweet id.
-type Runner func(ctx context.Context, question string, replyTo string) (string, error)
+type Runner func(ctx context.Context, question string, replyTo string, twitterId string) (string, error)
 
 // NewRunner constructs a Runner for the given agent command. It inherits the current
 // process environment and optionally overrides common agent envs if set:
 //   - AGENT_CG_MCP_HTTP, AGENT_X_MCP_HTTP, OPENAI_API_KEY, OPENAI_MODEL
 func NewRunner(agentCmd string) Runner {
-	return func(ctx context.Context, question string, replyTo string) (string, error) {
-		args := []string{"-q", question}
+	return func(ctx context.Context, question string, replyTo string, twitterId string) (string, error) {
+		args := []string{"-q", question, "-ti", twitterId}
 		if replyTo != "" {
 			args = append(args, "-reply-to", replyTo)
 		}
@@ -31,6 +31,12 @@ func NewRunner(agentCmd string) Runner {
 		}
 		if v := os.Getenv("AGENT_GOLDRUSH_MCP_HTTP"); v != "" {
 			env = append(env, fmt.Sprintf("GOLDRUSH_MCP_HTTP=%s", v))
+		}
+		if v := os.Getenv("AGENT_BNB_AGENT_MCP_SSE"); v != "" {
+			env = append(env, fmt.Sprintf("BNB_AGENT_MCP_SSE=%s", v))
+		}
+		if v := os.Getenv("AGENT_WALLET_MCP_HTTP"); v != "" {
+			env = append(env, fmt.Sprintf("WALLET_MCP_HTTP=%s", v))
 		}
 		if v := os.Getenv("OPENAI_API_KEY"); v != "" {
 			env = append(env, fmt.Sprintf("OPENAI_API_KEY=%s", v))

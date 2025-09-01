@@ -16,7 +16,7 @@ type Agent struct {
 	mcpClient *client.Client
 }
 
-func BnbProxy() Agent {
+func ProxyHandler() Agent {
 	ctx := context.Background()
 	baseURL := os.Getenv("BNB_AGENT_MCP_SSE")
 	if baseURL == "" {
@@ -57,6 +57,7 @@ func BnbProxy() Agent {
 }
 
 func (b *Agent) GetToolsInfo(ctx context.Context) (string, error) {
+	log.Println("Bnb proxy tools")
 	lgTools, err := b.mcpClient.ListTools(ctx, mcp.ListToolsRequest{})
 	if err != nil {
 		return "", fmt.Errorf("failed to list tools: %w", err)

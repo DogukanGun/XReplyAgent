@@ -9,7 +9,7 @@ import (
 type Mention struct {
 	TweetID        string `json:"tweet_id"`
 	Text           string `json:"text"`
-	AuthorID       string `json:"author_id"`
+	AuthorID       string `json:"twitter_id"`
 	AuthorUsername string `json:"author_username"`
 	ConversationID string `json:"conversation_id"`
 	CreatedAt      string `json:"created_at"`
