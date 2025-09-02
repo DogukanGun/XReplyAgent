@@ -25,7 +25,7 @@ func (wf *WalletFunctions) ReadUserWallet() (string, error) {
 // GenerateReadWalletTool creates an MCP tool for reading a wallet
 func (wf *WalletFunctions) GenerateReadWalletTool() (mcp.Tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error)) {
 	tool := mcp.NewTool("read_wallet",
-		mcp.WithDescription("Read a wallet's public address for the current Twitter ID"),
+		mcp.WithDescription("Read a user's public wallet address from the twitter_id of the user"),
 		mcp.WithString("twitter_id", mcp.Required(), mcp.Description("Twitter id of the user")),
 	)
 

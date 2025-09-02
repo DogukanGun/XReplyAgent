@@ -10,30 +10,28 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 )
 
 type Agent struct {
 	mcpClient *client.Client
 }
 
-func ProxyHandler() Agent {
+func ProxyHandler() (Agent, error) {
 	ctx := context.Background()
 	baseURL := os.Getenv("BNB_AGENT_MCP_SSE")
 	if baseURL == "" {
-		log.Println("BNB_AGENT_MCP_SSE environment variable not set")
-		os.Exit(1)
+		return Agent{}, fmt.Errorf("BNB_AGENT_MCP_SSE environment variable not set")
 	}
 
 	mcpClient, err := client.NewSSEMCPClient(baseURL)
 	if err != nil {
-		log.Println("Error creating mcp client:", err)
-		os.Exit(1)
+		return Agent{}, fmt.Errorf("error creating mcp client: %w", err)
 	}
 
 	err = mcpClient.Start(ctx)
 	if err != nil {
-		log.Println("Error starting mcp client:", err)
-		os.Exit(1)
+		return Agent{}, fmt.Errorf("error starting mcp client: %w", err)
 	}
 
 	initParams := mcp.InitializeParams{
@@ -48,12 +46,11 @@ func ProxyHandler() Agent {
 	if _, err = mcpClient.Initialize(ctx, mcp.InitializeRequest{
 		Params: initParams,
 	}); err != nil {
-		log.Println("Error initializing mcp client:", err)
-		os.Exit(1)
+		return Agent{}, fmt.Errorf("error initializing mcp client: %w", err)
 	}
 
 	log.Println("Bnb proxy started")
-	return Agent{mcpClient: mcpClient}
+	return Agent{mcpClient: mcpClient}, nil
 }
 
 func (b *Agent) GetToolsInfo(ctx context.Context) (string, error) {
@@ -132,19 +129,19 @@ func (b *Agent) GetAvailableTools(ctx context.Context) ([]string, error) {
 	return toolNames, nil
 }
 
-type BnbProxyTool struct {
+type ProxyTool struct {
 	agent *Agent
 }
 
 func (b *Agent) AsLangChainTool() tools.Tool {
-	return &BnbProxyTool{agent: b}
+	return &ProxyTool{agent: b}
 }
 
-func (t *BnbProxyTool) Name() string {
+func (t *ProxyTool) Name() string {
 	return "bnb_chain_proxy"
 }
 
-func (t *BnbProxyTool) Description() string {
+func (t *ProxyTool) Description() string {
 	ctx := context.Background()
 	lgTools, err := t.agent.mcpClient.ListTools(ctx, mcp.ListToolsRequest{})
 	if err != nil {
@@ -221,7 +218,7 @@ type CallRequest struct {
 	Parameters map[string]interface{} `json:"parameters,omitempty"`
 }
 
-func (t *BnbProxyTool) Call(ctx context.Context, input string) (string, error) {
+func (t *ProxyTool) Call(ctx context.Context, input string) (string, error) {
 	// Parse the input to extract tool name and parameters
 	var callRequest CallRequest
 	if err := json.Unmarshal([]byte(input), &callRequest); err != nil {
@@ -232,7 +229,11 @@ func (t *BnbProxyTool) Call(ctx context.Context, input string) (string, error) {
 		return "", fmt.Errorf("tool_name is required in input JSON")
 	}
 
-	result, err := t.agent.CallTool(ctx, callRequest.ToolName, callRequest.Parameters)
+	// Create a context with longer timeout for BNB operations
+	ctxWithTimeout, cancel := context.WithTimeout(ctx, 360*time.Second)
+	defer cancel()
+
+	result, err := t.agent.CallTool(ctxWithTimeout, callRequest.ToolName, callRequest.Parameters)
 	if err != nil {
 		return "", err
 	}

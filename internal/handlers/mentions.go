@@ -14,7 +14,7 @@ import (
 // MentionsHandler handles POST /mentions events.
 type MentionsHandler struct {
 	Secret string
-	Ask    func(ctx context.Context, text string) (string, error)
+	Ask    func(ctx context.Context, text string, twitterId string) (string, error)
 	Reply  func(ctx context.Context, in ReplyIn) error
 	// If set, uses the agent binary to both answer and post per mention.
 	AgentRun func(ctx context.Context, question string, replyTo string, twitterId string) (string, error)
@@ -85,7 +85,7 @@ func (h MentionsHandler) Handle(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		ans, err := h.Ask(r.Context(), q)
+		ans, err := h.Ask(r.Context(), q, m.AuthorID)
 		if err != nil {
 			results = append(results, res{TweetID: m.TweetID, Posted: false, Error: err.Error()})
 			continue

@@ -134,6 +134,8 @@ export AGENT_CG_MCP_HTTP="http://localhost:8082/mcp"
 export AGENT_X_MCP_HTTP="http://localhost:8081/mcp"
 export AGENT_GOLDRUSH_MCP_HTTP="http://localhost:8083/mcp"
 export OPENAI_API_KEY="<your_openai_key>"
+export AGENT_BNB_AGENT_MCP_SSE="http://localhost:3001/sse"
+export AGENT_WALLET_MCP_HTTP="http://localhost:8084/mcp"
 PORT=8080 ./bot
 ```
 
@@ -147,6 +149,8 @@ curl -s -X POST http://localhost:8080/mentions \
     "meta":{}
   }'
 ```
+
+Side note: If the bnb mcp server is wanted to test, please put a test author id that is from db and the related wallet should have test tokens.
 
 Replies under a tweet are handled automatically by the agent when invoked by the bot; no extra flags are needed in normal operation.
 
