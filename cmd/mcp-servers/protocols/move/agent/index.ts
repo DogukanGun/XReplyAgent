@@ -1,9 +1,8 @@
-import { z } from "zod";
 import * as dotenv from "dotenv";
 import { Aptos, AptosConfig, Ed25519PrivateKey, HexInput, Network, PrivateKey, PrivateKeyVariants } from "@aptos-labs/ts-sdk";
 import { MongoClient } from "mongodb"
 import { AgentRuntime, createAptosTools, LocalSigner } from "move-agent-kit";
-import { ChatAnthropic } from "@langchain/anthropic";
+import { ChatOpenAI } from "@langchain/openai";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt"
 import { HumanMessage } from "@langchain/core/messages";
@@ -15,7 +14,7 @@ export type RunAptosAgentResult = {
 	final: string
 }
 
-export async function runAptosAgent(message: string, twitterId?: string): Promise<RunAptosAgentResult> {
+export async function runAptosAgent(message: string, twitterId: string): Promise<RunAptosAgentResult> {
 	const outputs: string[] = []
 
 	// aptos setup
@@ -48,9 +47,10 @@ export async function runAptosAgent(message: string, twitterId?: string): Promis
 	})
 	const tools = createAptosTools(agentRuntime)
 
-	const llm = new ChatAnthropic({
+	const llm = new ChatOpenAI({
 		temperature: 0.7,
-		model: "claude-3-5-sonnet-20241022",
+		model: "gpt-4.1-mini",
+		openAIApiKey: process.env.OPENAI_API_KEY,
 	});
 
 	const memory = new MemorySaver();
