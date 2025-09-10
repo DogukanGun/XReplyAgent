@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { startSSEServer } from "./server/sse.js"
+import { startSSEServer } from "./server/sse.ts"
 
 async function main() {
   let server = await startSSEServer()

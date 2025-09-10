@@ -1,6 +1,6 @@
 import { Server } from "@modelcontextprotocol/sdk/server/index.js"
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js"
-import { runAptosAgent } from "../index.js"
+import { runAptosAgent } from "../index.ts"
 
 // Create and start the MCP server
 export const startServer = () => {

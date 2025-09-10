@@ -5,7 +5,7 @@ import cors from "cors"
 import express from "express"
 import type { Request, Response } from "express"
 
-import { startServer } from "./base.js"
+import { startServer } from "./base.ts"
 
 export const startSSEServer = async () => {
   try {
@@ -58,11 +58,11 @@ export const startSSEServer = async () => {
     const PORT = process.env.PORT || 3003
     app.listen(PORT, () => {
       console.info(
-        `BNBChain MCP SSE Server is running on http://localhost:${PORT}`
+        `Aptos Chain MCP SSE Server is running on http://localhost:${PORT}`
       )
     })
     return server
   } catch (error) {
-    console.error("Error starting BNBChain MCP SSE Server:", error)
+    console.error("Error starting Aptos Chain MCP SSE Server:", error)
   }
 }
