@@ -35,6 +35,9 @@ func NewRunner(agentCmd string) Runner {
 		if v := os.Getenv("AGENT_BNB_AGENT_MCP_SSE"); v != "" {
 			env = append(env, fmt.Sprintf("BNB_AGENT_MCP_SSE=%s", v))
 		}
+		if v := os.Getenv("AGENT_BNB_MCP_HTTP"); v != "" {
+			env = append(env, fmt.Sprintf("BNB_MCP_HTTP=%s", v))
+		}
 		if v := os.Getenv("AGENT_WALLET_MCP_HTTP"); v != "" {
 			env = append(env, fmt.Sprintf("WALLET_MCP_HTTP=%s", v))
 		}

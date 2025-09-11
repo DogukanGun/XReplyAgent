@@ -20,8 +20,6 @@ import (
 	"github.com/tmc/langchaingo/llms/openai"
 	"github.com/tmc/langchaingo/schema"
 	"github.com/tmc/langchaingo/tools"
-
-	"cg-mentions-bot/cmd/mcp-servers/protocols/bnb"
 )
 
 type mcpHTTP struct {
@@ -184,11 +182,37 @@ func grDiscoveredTools(gr *mcpHTTP) ([]tools.Tool, error) {
 	return out, nil
 }
 
+// bnbDiscoveredTools discovers tools exposed by the BNB HTTP MCP proxy server
+// and converts them to LangChainGo tools for the agent.
+func bnbDiscoveredTools(bnb *mcpHTTP) ([]tools.Tool, error) {
+	raw, err := bnb.listTools()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]tools.Tool, 0, len(raw))
+	for _, t := range raw {
+		name, _ := t["name"].(string)
+		if name == "" {
+			continue
+		}
+		description, _ := t["description"].(string)
+		// include inputSchema (if any) as a compact JSON to guide the LLM
+		if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
+			if b, err := json.Marshal(schemaVal); err == nil {
+				description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
+			}
+		}
+		out = append(out, genericMCPTool{client: bnb, name: name, desc: description})
+	}
+	return out, nil
+}
+
 func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	cgURL := os.Getenv("CG_MCP_HTTP")
 	xURL := os.Getenv("X_MCP_HTTP")
 	goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
 	walletMcpUrl := os.Getenv("WALLET_MCP_HTTP")
+	bnbHttpURL := os.Getenv("BNB_MCP_HTTP")
 	if cgURL == "" || xURL == "" || goldrushURL == "" {
 		fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
 		return "", nil
@@ -213,14 +237,14 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	gr := newMCP(goldrushURL)
 	wl := newMCP(walletMcpUrl)
 
-	// Initialize BNB proxy agent
-	bnbProxy, err := bnb.ProxyHandler()
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to initialize BNB proxy: %v\n", err)
-	}
-	var bnbProxyTool tools.Tool
-	if err == nil {
-		bnbProxyTool = bnbProxy.AsLangChainTool()
+	// Initialize BNB tools: prefer HTTP MCP proxy; fallback to SSE proxy tool
+	var bnbTools []tools.Tool
+	if strings.TrimSpace(bnbHttpURL) != "" {
+		if t, err := bnbDiscoveredTools(newMCP(bnbHttpURL)); err == nil {
+			bnbTools = t
+		} else {
+			fmt.Fprintln(os.Stderr, "failed to discover BNB HTTP tools:", err)
+		}
 	}
 
 	cgTools, err := cgDiscoveredTools(cg)
@@ -236,13 +260,11 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 		fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
 	}
 
-	toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+len(wlTools)+2)
+	toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+len(wlTools)+len(bnbTools)+2)
 	toolsList = append(toolsList, cgTools...)
 	toolsList = append(toolsList, grTools...)
 	toolsList = append(toolsList, xTool{client: x})
-	if bnbProxyTool != nil {
-		toolsList = append(toolsList, bnbProxyTool)
-	}
+	toolsList = append(toolsList, bnbTools...)
 	toolsList = append(toolsList, wlTools...)
 	model := os.Getenv("OPENAI_MODEL")
 	if model == "" {
@@ -331,6 +353,7 @@ func main() {
 		xURL := os.Getenv("X_MCP_HTTP")
 		goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
 		walletMcpUrl := os.Getenv("WALLET_MCP_HTTP")
+		bnbHttpURL := os.Getenv("BNB_MCP_HTTP")
 		if cgURL == "" || xURL == "" || goldrushURL == "" {
 			fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
 			os.Exit(1)
@@ -360,14 +383,14 @@ func main() {
 		gr := newMCP(goldrushURL)
 		wl := newMCP(walletMcpUrl)
 
-		// Initialize BNB proxy agent
-		bnbProxy, err := bnb.ProxyHandler()
-		if err != nil {
-			fmt.Fprintf(os.Stderr, "failed to initialize BNB proxy: %v\n", err)
-		}
-		var bnbProxyTool tools.Tool
-		if err == nil {
-			bnbProxyTool = bnbProxy.AsLangChainTool()
+		// Initialize BNB tools: prefer HTTP MCP proxy; fallback to SSE proxy tool
+		var bnbTools []tools.Tool
+		if strings.TrimSpace(bnbHttpURL) != "" {
+			if t, err := bnbDiscoveredTools(newMCP(bnbHttpURL)); err == nil {
+				bnbTools = t
+			} else {
+				fmt.Fprintln(os.Stderr, "failed to discover BNB HTTP tools:", err)
+			}
 		}
 
 		cgTools, err := cgDiscoveredTools(cg)
@@ -388,13 +411,11 @@ func main() {
 			}
 		}
 
-		toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+1)
+		toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+len(bnbTools)+1)
 		toolsList = append(toolsList, cgTools...)
 		toolsList = append(toolsList, grTools...)
 		toolsList = append(toolsList, xTool{client: x})
-		if bnbProxyTool != nil {
-			toolsList = append(toolsList, bnbProxyTool)
-		}
+		toolsList = append(toolsList, bnbTools...)
 		toolsList = append(toolsList, wlTools...)
 		model := os.Getenv("OPENAI_MODEL")
 		if model == "" {
@@ -422,7 +443,7 @@ func main() {
 		prompt := q
 		prompt = fmt.Sprintf("%s . User\\'s twitter_id is %s", prompt, strings.TrimSpace(*twitterId))
 		if strings.TrimSpace(*replyTo) != "" {
-			prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. Then reply to tweet %s using x_post_reply.Also user\\'s twitter_id is %s", prompt, strings.TrimSpace(*replyTo), twitterId)
+			prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. Then reply to tweet %s using x_post_reply.Also user\\'s twitter_id is %s", prompt, strings.TrimSpace(*replyTo), strings.TrimSpace(*twitterId))
 		}
 
 		ctx := context.Background()
