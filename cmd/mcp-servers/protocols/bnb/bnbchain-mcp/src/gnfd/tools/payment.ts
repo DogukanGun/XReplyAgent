@@ -32,7 +32,7 @@ export function registerPaymentTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "getting payment account")
       }
-    })
+    }, "gnfd_get_payment_accounts")
   )
 
   // Create payment account
@@ -53,7 +53,7 @@ export function registerPaymentTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "creating payment account")
       }
-    })
+    }, "gnfd_create_payment_account")
   )
 
   // Deposit to payment account
@@ -77,7 +77,7 @@ export function registerPaymentTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "depositing to payment account")
       }
-    })
+    }, "gnfd_deposit_to_payment")
   )
 
   // Withdraw from payment account
@@ -101,7 +101,7 @@ export function registerPaymentTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "withdrawing from payment account")
       }
-    })
+    }, "gnfd_withdraw_from_payment")
   )
 
   // Disable refund for payment account

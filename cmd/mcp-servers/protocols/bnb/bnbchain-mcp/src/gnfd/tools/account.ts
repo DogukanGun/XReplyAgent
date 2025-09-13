@@ -30,7 +30,7 @@ export function registerAccountTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "fetching account balance")
       }
-    })
+    }, "gnfd_get_account_balance")
   )
 
   // Get all storage providers

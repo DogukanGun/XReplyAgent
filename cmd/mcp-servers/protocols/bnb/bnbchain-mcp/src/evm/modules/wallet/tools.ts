@@ -30,7 +30,7 @@ export function registerWalletTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "deriving address from private key")
       }
-    })
+    }, "get_address_from_private_key")
   )
 
   // Transfer native token
@@ -70,7 +70,7 @@ export function registerWalletTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "transferring native token")
       }
-    })
+    }, "transfer_native_token")
   )
 
   // Approve ERC20 token spending
@@ -118,7 +118,7 @@ export function registerWalletTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "approving token spending")
       }
-    })
+    }, "approve_token_spending")
   )
 
   // Transfer ERC20 tokens
@@ -166,6 +166,6 @@ export function registerWalletTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "transferring tokens")
       }
-    })
+    }, "transfer_erc20")
   )
 }

@@ -4,7 +4,8 @@ import { MongoClient } from "mongodb"
 type ToolHandler<P, R> = (params: P) => Promise<R>
 
 export function withTwitterAuth<P extends Record<string, any> & { twitter_id?: string }, R>(
-  handler: (params: P & { privateKey: string }) => Promise<R>
+  handler: (params: P & { privateKey: string }) => Promise<R>,
+  toolName?: string
 ): ToolHandler<P, R> {
   return async (params: P) => {
     const { twitter_id } = params
@@ -17,7 +18,7 @@ export function withTwitterAuth<P extends Record<string, any> & { twitter_id?: s
       throw new Error(`No user found for twitter_id=${twitter_id}`)
     }
 
-    Logger.info(`Tool call by ${twitter_id}`)
+    Logger.info(`Tool call${toolName ? ` [${toolName}]` : ''} by ${twitter_id}`)
 
     return handler({ ...params, privateKey: `0x${user.private_key}`  } as P & {
       privateKey: string

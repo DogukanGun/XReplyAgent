@@ -3,9 +3,10 @@ package main
 import (
 	"cg-mentions-bot/cmd/mcp-servers/wallet/functions"
 	"cg-mentions-bot/internal/utils/db"
-	"github.com/mark3labs/mcp-go/server"
 	"log"
 	"os"
+
+	"github.com/mark3labs/mcp-go/server"
 )
 
 func main() {
@@ -38,7 +39,7 @@ func main() {
 	}
 
 	// Run server
-	port := "8084"
+	port := "8085"
 	if v, ok := os.LookupEnv("PORT"); ok {
 		port = v
 	}

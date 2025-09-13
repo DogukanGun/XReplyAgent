@@ -52,7 +52,7 @@ func main() {
 	}
 
 	ask := cg.NewAsker(mcpCmd, mcpTool)
-	ans, err := ask(ctx, q)
+	ans, err := ask(ctx, q, "")
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "ERR:", err)
 		os.Exit(1)
