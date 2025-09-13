@@ -151,7 +151,7 @@ export const createERC20Token = async ({
   symbol,
   privateKey,
   totalSupply = "1000000000", // default 1 billion
-  network = "bsc"
+  network = "bsc-testnet"
 }: {
   name: string
   symbol: string
@@ -161,20 +161,27 @@ export const createERC20Token = async ({
 }) => {
   const client = getWalletClient(privateKey, network)
   const supply = BigInt(totalSupply)
+  Logger.info(`Deploying new ERC20 token (${name} - ${symbol}): ${supply}`)
+  try {
   const hash = await client.deployContract({
     abi: ERC20_ABI,
     bytecode: ERC20_BYTECODE,
     args: [name, symbol, supply],
     account: client.account!,
     chain: client.chain
-  })
+    })
 
-  Logger.info(`Deployed new ERC20 token (${name} - ${symbol}): ${hash}`)
-  return {
-    hash,
-    name,
-    symbol,
-    totalSupply: supply,
-    owner: client.account!.address
+    Logger.info(`Deployed new ERC20 token (${name} - ${symbol}): ${hash}`)
+    return {
+      hash,
+      name,
+      symbol,
+      totalSupply: supply,
+      owner: client.account!.address
+    }
+  } catch (error) {
+    Logger.error(`Error deploying new ERC20 token (${name} - ${symbol}): ${error}`)
+    throw error
   }
+  
 }

@@ -58,6 +58,7 @@ func NewRunner(agentCmd string) Runner {
 			if stdout != "" {
 				return stdout, fmt.Errorf("agent error: %v; stderr: %s", err, errBuf.String())
 			}
+			print(err)
 			return "", fmt.Errorf("agent error: %v; stderr: %s", err, errBuf.String())
 		}
 		return stdout, nil

@@ -5,7 +5,7 @@ export const defaultNetworkParam = z
   .describe(
     "Network name (e.g. 'bsc', 'opbnb', 'ethereum', 'base', etc.) or chain ID. Supports others main popular networks. Defaults to BSC mainnet."
   )
-  .default("bsc")
+  .default("bsc-testnet")
 
 export const networkSchema = z
   .string()

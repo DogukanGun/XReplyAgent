@@ -54,7 +54,7 @@ export function registerTokenTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "fetching native token balance")
       }
-    })
+    }, "get_native_balance")
   )
 
   // Get ERC20 token balance
@@ -79,7 +79,7 @@ export function registerTokenTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "fetching ERC20 token balance")
       }
-    })
+    }, "get_erc20_balance")
   )
 
   // Create ERC20 token
@@ -105,6 +105,6 @@ export function registerTokenTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "creating ERC20 token")
       }
-    })
+    }, "create_erc20_token")
   )
 }

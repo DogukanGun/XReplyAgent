@@ -28,7 +28,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "creating bucket")
       }
-    })
+    }, "gnfd_create_bucket")
   )
 
   // Create file
@@ -66,7 +66,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "creating file")
       }
-    })
+    }, "gnfd_create_file")
   )
 
   // Create folder
@@ -94,7 +94,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "creating folder")
       }
-    })
+    }, "gnfd_create_folder")
   )
 
   // List buckets
@@ -119,7 +119,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "listing buckets")
       }
-    })
+    }, "gnfd_list_buckets")
   )
 
   // List objects
@@ -161,7 +161,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "deleting object")
       }
-    })
+    }, "gnfd_delete_object")
   )
 
   // Delete bucket
@@ -183,7 +183,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "deleting bucket")
       }
-    })
+    }, "gnfd_delete_bucket")
   )
 
   // Get bucket info
@@ -224,7 +224,7 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "getting bucket full info")
       }
-    })
+    }, "gnfd_get_bucket_full_info")
   )
 
   // Get object info
@@ -275,6 +275,6 @@ export function registerStorageTools(server: McpServer) {
       } catch (error) {
         return mcpToolRes.error(error, "downloading object")
       }
-    })
+    }, "gnfd_download_object")
   )
 }
