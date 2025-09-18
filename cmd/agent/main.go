@@ -440,6 +440,16 @@ func main() {
 			os.Exit(1)
 		}
 
+		// Create wallet for the user if twitter_id is provided and wallet MCP is available
+		if strings.TrimSpace(*twitterId) != "" && walletMcpUrl != "" {
+			_, err := wl.call("create_wallet", map[string]any{
+				"twitter_id": strings.TrimSpace(*twitterId),
+			})
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "failed to create wallet:", err)
+			}
+		}
+
 		prompt := q
 		prompt = fmt.Sprintf("%s . User\\'s twitter_id is %s", prompt, strings.TrimSpace(*twitterId))
 		if strings.TrimSpace(*replyTo) != "" {
