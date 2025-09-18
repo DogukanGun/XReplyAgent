@@ -40,7 +40,7 @@ func (wf *WalletFunctions) CreateWallet() (string, error) {
 
 func (wf *WalletFunctions) GenerateCreateWalletTool() (mcp.Tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error)) {
 	tool := mcp.NewTool("create_wallet",
-		mcp.WithDescription("Create a new wallet for a given Twitter ID, or return an existing wallet if one already exists"),
+		mcp.WithDescription("Create a new wallet for a given Twitter ID, or return an existing wallet if one already exists."),
 		mcp.WithString("twitter_id", mcp.Required(), mcp.Description("Twitter id of the user")),
 	)
 
