@@ -147,11 +147,11 @@ func cgDiscoveredTools(cg *mcpHTTP) ([]tools.Tool, error) {
 		}
 		description, _ := t["description"].(string)
 		// include inputSchema (if any) as a compact JSON to guide the LLM
-		if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
-			if b, err := json.Marshal(schemaVal); err == nil {
-				description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
-			}
-		}
+		// if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
+		// 	if b, err := json.Marshal(schemaVal); err == nil {
+		// 		description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
+		// 	}
+		// }
 		out = append(out, genericMCPTool{client: cg, name: name, desc: description})
 	}
 	return out, nil
@@ -172,11 +172,11 @@ func grDiscoveredTools(gr *mcpHTTP) ([]tools.Tool, error) {
 		}
 		description, _ := t["description"].(string)
 		// include inputSchema (if any) as a compact JSON to guide the LLM
-		if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
-			if b, err := json.Marshal(schemaVal); err == nil {
-				description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
-			}
-		}
+		// if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
+		// 	if b, err := json.Marshal(schemaVal); err == nil {
+		// 		description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
+		// 	}
+		// }
 		out = append(out, genericMCPTool{client: gr, name: name, desc: description})
 	}
 	return out, nil
@@ -281,7 +281,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 		llm,
 		toolsList,
 		agents.ZeroShotReactDescription,
-		agents.WithMaxIterations(20),
+		agents.WithMaxIterations(10),
 		agents.WithParserErrorHandler(peh),
 	)
 	if err != nil {
