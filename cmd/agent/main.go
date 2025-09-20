@@ -432,7 +432,7 @@ func main() {
 			llm,
 			toolsList,
 			agents.ZeroShotReactDescription,
-			agents.WithMaxIterations(10),
+			agents.WithMaxIterations(20),
 			agents.WithParserErrorHandler(peh),
 		)
 		if err != nil {
