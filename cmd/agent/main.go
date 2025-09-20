@@ -182,6 +182,30 @@ func grDiscoveredTools(gr *mcpHTTP) ([]tools.Tool, error) {
 	return out, nil
 }
 
+// wlDiscoveredTools discovers tools exposed by the Wallet HTTP MCP server and
+// includes inputSchema details to guide the LLM on argument structure.
+func wlDiscoveredTools(wl *mcpHTTP) ([]tools.Tool, error) {
+	raw, err := wl.listTools()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]tools.Tool, 0, len(raw))
+	for _, t := range raw {
+		name, _ := t["name"].(string)
+		if name == "" {
+			continue
+		}
+		description, _ := t["description"].(string)
+		if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
+			if b, err := json.Marshal(schemaVal); err == nil {
+				description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
+			}
+		}
+		out = append(out, genericMCPTool{client: wl, name: name, desc: description})
+	}
+	return out, nil
+}
+
 // bnbDiscoveredTools discovers tools exposed by the BNB HTTP MCP proxy server
 // and converts them to LangChainGo tools for the agent.
 func bnbDiscoveredTools(bnb *mcpHTTP) ([]tools.Tool, error) {
@@ -255,7 +279,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
 	}
-	wlTools, err := grDiscoveredTools(wl)
+	wlTools, err := wlDiscoveredTools(wl)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
 	}
@@ -405,7 +429,7 @@ func main() {
 		}
 		var wlTools []tools.Tool
 		if walletMcpUrl != "" {
-			wlTools, err = grDiscoveredTools(wl)
+			wlTools, err = wlDiscoveredTools(wl)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
 			}
@@ -455,9 +479,9 @@ func main() {
 		prompt := q
 		prompt = fmt.Sprintf("%s . User\\'s twitter_id is %s", prompt, strings.TrimSpace(*twitterId))
 		if strings.TrimSpace(*replyTo) != "" {
-			prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. You are an ai agent that manages wallets of user via commands form their tweets. "+
-				"Each answer you are going to give is gonna be posted in twitter. So whenever you answer, write as directly asnwering the question"+
-				"Do never share private key or twitter id in x messages. Then reply to tweet %s using x_post_reply.Also user\\'s twitter_id is %s . "+
+			prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. You are an ai agent that manages wallets of user via commands from their tweets. "+
+				"Each answer you are going to give is gonna be posted in twitter. So whenever you answer, write as directly answering the question"+
+				"Do never share private key or twitter id in x messages. Then reply to tweet %s using x_post_reply. Also user\\'s twitter_id is %s . "+
 				"And whenever an operation in blockchain is done please give transaction hash in the response",
 				prompt, strings.TrimSpace(*replyTo), strings.TrimSpace(*twitterId))
 		}
