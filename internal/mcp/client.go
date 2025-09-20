@@ -13,8 +13,8 @@ import (
 
 // Ask uses the official MCP stdio client to initialize and call a tool, then
 // extracts plain text from the tool response content.
-func Ask(ctx context.Context, mcpCmd string, tool string, prompt string) (string, error) {
-	return Call(ctx, mcpCmd, tool, map[string]interface{}{"question": prompt})
+func Ask(ctx context.Context, mcpCmd string, tool string, prompt string, twitterId string) (string, error) {
+	return Call(ctx, mcpCmd, tool, map[string]interface{}{"question": prompt, "twitterId": twitterId})
 }
 
 // Call initializes the MCP client and calls a tool with arbitrary arguments,

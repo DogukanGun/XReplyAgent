@@ -1,23 +1,24 @@
 ## XReplyAgent 🤖
 
-Automated X/Twitter mention responder powered by MCP servers and a LangChain agent. It reads mention events (e.g., from an n8n workflow), chooses the right tool (CoinGecko, GoldRush), generates an answer, and optionally posts a reply on X.
+Automated X/Twitter mention responder powered by MCP servers and a LangChain agent. It reads mention events (e.g., from an n8n workflow), chooses the right tool (CoinGecko, GoldRush, BNB MCP, Wallet MCP), generates an answer, and optionally posts a reply on X.
 
 ### Why
 - **Faster support**: Answer crypto data questions at mention time.
-- **Tool-orchestration**: Use multiple MCP servers (CoinGecko, GoldRush) via an agent.
+- **Tool-orchestration**: Use multiple MCP servers (BNB, Wallet, CoinGecko, GoldRush) via an agent.
 - **Hands-free posting**: Reply under the original tweet through an X MCP.
 
-### Hyperliquid extension goal 🧭
-XReplyAgent showcases how the Hyperliquid ecosystem can be made more accessible and engaging directly on X:
-- **Ask-on-X**: Community members can mention your account and ask about Hyperliquid topics (e.g., HLP price, token movements, transaction details), receiving answers in-reply, in seconds.
-- **Right tool for the job**: The agent routes price/market questions to CoinGecko MCP and on‑chain activity questions (balances, transfers, gas, transaction lookups) to the GoldRush MCP.
-- **Frictionless onboarding**: No dashboards or query builders—natural‑language questions on X become live, contextual responses, increasing Hyperliquid awareness and engagement.
-- **Extensible**: New Hyperliquid‑specific tools can be added as MCP endpoints, and the agent will automatically consider them.
+### BNB Chain hackathon focus 🟡
+We customized and integrated a BNB Chain MCP to deliver a social, X-native wallet experience:
+- **BNB MCP (customized SSE)**: We tweaked the BNB MCP server to expose rich EVM + Greenfield tools over SSE for real-time, robust operations on BSC/opBNB/Greenfield.
+- **Twitter ID → Wallet mapping**: Mentions include a user identifier; the agent and Wallet MCP bind that Twitter ID to a per-user wallet, enabling “social wallets” that are controlled via tweets.
+- **Wallet MCP for user onboarding**: The Wallet MCP can create wallets on demand, sign transactions, query balances, and perform transfers—securely persisted (MongoDB) and referenced by Twitter ID.
+- **Agent orchestration**: The agent selects between CoinGecko (prices), GoldRush (on‑chain analytics), BNB MCP (chain ops), and X MCP (posting), sanitizes responses, and posts the final answer under the mention.
 
-Examples the agent can answer for Hyperliquid users:
-- “What’s the price of HLP right now?” → CoinGecko MCP.
-- “Show the last 3 ERC20 transfers of the HLP contract on ethereum; brief summary.” → GoldRush MCP.
-- “Give me the native balance and recent activity for 0x… on base; 1 line.” → GoldRush MCP.
+Example BNB-centric requests the agent can handle:
+- “Create a wallet for me on BSC testnet.” → Wallet MCP (per‑Twitter ID wallet).
+- “What is my wallet address?” → Wallet MCP (lookup by Twitter ID).
+- “Send 0.01 BNB to 0x… on testnet; confirm with tx hash.” → Wallet MCP + BNB MCP.
+- “Show my last 3 transactions on BSC; short summary.” → BNB MCP.
 
 ---
 
@@ -41,6 +42,16 @@ Examples the agent can answer for Hyperliquid users:
 - `cmd/mcp-servers/general/goldrush` (GoldRush MCP)
   - Adds tools for on-chain data (Covalent GoldRush): balances, transactions, gas, NFTs, token holders, etc.
   - Requires `GOLDRUSH_AUTH_TOKEN` and often an allow-list (IP) on Covalent.
+
+- `cmd/mcp-servers/protocols/bnb/bnbchain-mcp` (BNB Chain MCP Server)
+  - Comprehensive blockchain tools for BSC, opBNB, Greenfield, and other EVM-compatible networks.
+  - Provides wallet operations, token transfers, smart contract interactions, NFT operations, and Greenfield storage.
+  - Runs in SSE mode for real-time communication.
+
+- `cmd/mcp-servers/wallet` (Wallet MCP Server)
+  - Secure wallet operations integrated with user Twitter IDs.
+  - Provides wallet creation, transaction signing, balance queries, and asset transfers.
+  - Requires MongoDB for persistent user wallet storage.
 
 - `cmd/agent` (LangChainGo ReAct agent)
   - Discovers tools from HTTP MCP servers: CoinGecko + GoldRush + X poster.
@@ -125,7 +136,36 @@ Tip: If Covalent enforces allow-lists, add the egress IP (Elastic IP or NAT EIP)
 curl -i -H "Authorization: Bearer $GOLDRUSH_AUTH_TOKEN" https://api.covalenthq.com/v1/chains/
 ```
 
-### 4) Run bot in Agent mode (recommended) 🤖
+### 4) Start BNB Chain MCP Server 🟡
+```bash
+cd cmd/mcp-servers/protocols/bnb/bnbchain-mcp
+npm install
+npm run dev:sse
+```
+The BNB MCP server provides comprehensive blockchain tools for BSC, opBNB, Greenfield, and other EVM-compatible networks including:
+- Wallet operations and balance queries
+- Token transfers (ERC20, ERC721, ERC1155) 
+- Smart contract interactions
+- Transaction analysis
+- NFT operations
+- Greenfield storage operations
+
+### 5) Start Wallet MCP Server 💳
+```bash
+go build -o wallet ./cmd/mcp-servers/wallet
+export BNB_RPC_="https://bnb-mainnet.g.alchemy.com/v2/"
+export BNB_RPC="https://bnb-testnet.g.alchemy.com/v2/"
+export MONGODB_URI="mongodb://localhost:27017"  # Your MongoDB connection string
+PORT=8084 ./wallet
+```
+The Wallet MCP server provides secure wallet operations including:
+- Wallet creation and management
+- Transaction signing
+- Balance queries
+- Asset transfers
+- Integration with user Twitter IDs for personalized wallet operations
+
+### 6) Run bot in Agent mode (recommended) 🤖
 ```bash
 go build -o agent ./cmd/agent
 go build -o bot ./cmd/bot
@@ -134,6 +174,8 @@ export AGENT_CG_MCP_HTTP="http://localhost:8082/mcp"
 export AGENT_X_MCP_HTTP="http://localhost:8081/mcp"
 export AGENT_GOLDRUSH_MCP_HTTP="http://localhost:8083/mcp"
 export OPENAI_API_KEY="<your_openai_key>"
+export AGENT_BNB_AGENT_MCP_SSE="http://localhost:3001/sse"
+export AGENT_WALLET_MCP_HTTP="http://localhost:8084/mcp"
 PORT=8080 ./bot
 ```
 
@@ -148,7 +190,29 @@ curl -s -X POST http://localhost:8080/mentions \
   }'
 ```
 
+Side note: If the bnb mcp server is wanted to test, please put a test author id that is from db and the related wallet should have test tokens.
+
 Replies under a tweet are handled automatically by the agent when invoked by the bot; no extra flags are needed in normal operation.
+
+### BNB: Ask for your wallet address (after creating a wallet) 🟡
+```bash
+curl -s -X POST http://localhost:8080/mentions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "count":1,
+    "mentions":[
+      {
+        "tweet_id":"1966236681595670934",
+        "text":"what is my wallet address?",
+        "twitter_id":"65acb7120c67c6c",
+        "author_username":"alice",
+        "conversation_id":"1956374656836907309",
+        "created_at":"2025-08-15T10:00:00.000Z"
+      }
+    ],
+    "meta":{}
+  }'
+```
 
 ---
 
@@ -167,15 +231,29 @@ Replies under a tweet are handled automatically by the agent when invoked by the
 - `GOLDRUSH_AUTH_TOKEN` (Covalent token; may require allow-list)
 - `PORT` (default 8083)
 
+### BNB Chain MCP Server
+- `BNB_AGENT_MCP_SSE` (e.g., `http://localhost:3002/sse`)
+- `PRIVATE_KEY` (optional, for transaction operations)
+- `PORT` (default 3002)
+- `LOG_LEVEL` (DEBUG, INFO, WARN, ERROR)
+
+### Wallet MCP Server  
+- `BNB_RPC_` (BNB mainnet RPC URL)
+- `BNB_RPC` (BNB testnet RPC URL) 
+- `MONGODB_URI` (MongoDB connection string for user wallet storage)
+- `PORT` (default 8084)
+
 ### Agent
 - `CG_MCP_HTTP` (e.g., `http://localhost:8082/mcp`)
-- `X_MCP_HTTP`  (e.g., `http://localhost:8081/mcp`)
+- `X_MCP_HTTP` (e.g., `http://localhost:8081/mcp`)
 - `GOLDRUSH_MCP_HTTP` (e.g., `http://localhost:8083/mcp`)
+- `BNB_AGENT_MCP_SSE` (e.g., `http://localhost:3002/sse`)
+- `WALLET_MCP_HTTP` (e.g., `http://localhost:8084/mcp`)
 - `OPENAI_API_KEY`, `OPENAI_MODEL` (default `gpt-4.1-mini`)
-- Flags: `-q`, `-reply-to`
+- Flags: `-q`, `-reply-to`, `-ti`
 
 ### Bot
-- `AGENT_CMD`, `AGENT_CG_MCP_HTTP`, `AGENT_X_MCP_HTTP`, `AGENT_GOLDRUSH_MCP_HTTP`, `OPENAI_API_KEY`
+- `AGENT_CMD`, `AGENT_CG_MCP_HTTP`, `AGENT_X_MCP_HTTP`, `AGENT_GOLDRUSH_MCP_HTTP`, `AGENT_BNB_AGENT_MCP_SSE`, `AGENT_WALLET_MCP_HTTP`, `OPENAI_API_KEY`
 - `WEBHOOK_SECRET` (optional), `PORT` (default 8080)
 
 ---
@@ -210,6 +288,16 @@ kill <PID>            # or: pkill -f xmcp
 - `401 Unauthorized`: bad/expired token or allow-list not set. Validate with curl (see above).
 - `402 Payment Required`: credits/quota issue.
 
+### BNB MCP Server issues
+- Ensure Node.js and npm are installed
+- Check if the SSE endpoint is accessible: `curl http://localhost:3002/sse`
+- Verify the BNB MCP server logs for any connection issues
+
+### Wallet MCP Server issues
+- Ensure MongoDB is running and accessible
+- Verify database connection with the provided `MONGODB_URI`
+- Check that the user's Twitter ID exists in the database for wallet operations
+
 ### Remove tool chatter from replies
 - The agent sanitizes its final answer to remove lines like `Action:` / `Observation:`; update to latest build if you still see them.
 
@@ -219,6 +307,8 @@ kill <PID>            # or: pkill -f xmcp
 - High-level tool discovery is done over HTTP MCP (`initialize`, `tools/list`, `tools/call`).
 - The agent maps discovered tools to LangChainGo `tools.Tool` instances, and calls them by name.
 - For CoinGecko, `cgproxy` forwards to an upstream stdio MCP (local or remote).
+- The BNB MCP server runs in SSE mode for real-time communication.
+- The Wallet MCP server integrates with MongoDB for persistent user wallet storage.
 
 ---
 
@@ -226,6 +316,8 @@ kill <PID>            # or: pkill -f xmcp
 - Keep all API keys in env vars; avoid committing secrets.
 - For Covalent GoldRush, use an Elastic IP or NAT Gateway EIP in the allow-list.
 - The bot supports a `WEBHOOK_SECRET` header to protect `/mentions`.
+- Store wallet private keys securely in MongoDB with proper encryption.
+- Never expose private keys in logs or error messages.
 
 ---
 

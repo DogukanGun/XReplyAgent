@@ -12,6 +12,7 @@ import (
 
 	aggregator "cg-mentions-bot/cmd/mcp-servers/general/datafeeds/chainlink/aggregatorv3"
 	"encoding/json"
+
 	"github.com/ethereum/go-ethereum/accounts/abi/bind"
 	"github.com/ethereum/go-ethereum/common"
 	"github.com/ethereum/go-ethereum/ethclient"
@@ -27,7 +28,7 @@ var chainIds = map[string]string{
 	"ethereum": "1",
 }
 
-func getPriceFromChainlink(chainName string, assetName string) float64 {
+func GetPriceFromChainlink(chainName string, assetName string) (float64, error) {
 	// Read the JSON file
 	var feedAddress string
 	absPath, err := filepath.Abs("data_feeds.json")
@@ -90,7 +91,7 @@ func getPriceFromChainlink(chainName string, assetName string) float64 {
 	// Return the float value of the price
 	price := divideBigInt(roundData.Answer, divisor)
 	priceFloat, _ := price.Float64()
-	return priceFloat
+	return priceFloat, nil
 }
 
 func isContractAddress(addr string, client *ethclient.Client) bool {
