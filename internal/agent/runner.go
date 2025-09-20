@@ -54,12 +54,12 @@ func NewRunner(agentCmd string) Runner {
 		err := cmd.Run()
 		stdout := outBuf.String()
 		if err != nil {
-			// Return stdout if present, but include error and stderr for visibility
+			// Include both stdout and stderr in the error for better diagnostics via the bot
 			if stdout != "" {
-				return stdout, fmt.Errorf("agent error: %v; stderr: %s", err, errBuf.String())
+				return stdout, fmt.Errorf("agent error: %v; stdout: %q; stderr: %q", err, stdout, errBuf.String())
 			}
 			print(err)
-			return "", fmt.Errorf("agent error: %v; stderr: %s", err, errBuf.String())
+			return "", fmt.Errorf("agent error: %v; stdout: %q; stderr: %q", err, stdout, errBuf.String())
 		}
 		return stdout, nil
 	}
