@@ -322,6 +322,8 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 
 	prompt := fmt.Sprintf("%s Answer this question using the available MCP tools. The twitter id of the user is: %s ", q, twitterId)
 
+	// Debug: print the exact LLM prompt to stderr (not returned to clients)
+	fmt.Fprintln(os.Stderr, "LLM prompt:", prompt)
 	ctx := context.Background()
 	log.Printf("Asking the question: %s", prompt)
 	out, err := exec.Call(ctx, map[string]any{"input": prompt})
@@ -493,6 +495,8 @@ func main() {
 				prompt, strings.TrimSpace(*replyTo), strings.TrimSpace(*twitterId))
 		}
 
+		// Debug: print the exact LLM prompt to stderr (not returned to clients)
+		fmt.Fprintln(os.Stderr, "LLM prompt:", prompt)
 		ctx := context.Background()
 		out, err := exec.Call(ctx, map[string]any{"input": prompt})
 		if err != nil {
