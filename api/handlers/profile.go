@@ -10,14 +10,14 @@ import (
 //
 //	@Summary		Get user profile
 //	@Description	Get the authenticated user's profile information
-//	@Tags			profile
+//	@Tags			user
 //	@Accept			json
 //	@Produce		json
 //	@Success		200	{object}	ProfileResponse
 //	@Failure		401	{object}	ErrorResponse
 //	@Failure		500	{object}	ErrorResponse
 //	@Security		Bearer
-//	@Router			/profile [get]
+//	@Router			/user/profile [get]
 func GetProfileHandler(w http.ResponseWriter, r *http.Request) {
 	uid, ok := r.Context().Value(UidKey).(string)
 	if !ok {
@@ -30,10 +30,21 @@ func GetProfileHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get user info from database using Firebase ID
+	user, found := GetUserByFirebaseID(uid)
+	if !found {
+		log.Printf("User not found in database: %s", uid)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusNotFound)
+		if err := json.NewEncoder(w).Encode(ErrorResponse{Error: "User not found"}); err != nil {
+			log.Printf("Error encoding response: %v", err)
+		}
+		return
+	}
 	response := ProfileResponse{
 		UID:       uid,
-		Email:     "user@example.com",
-		TwitterID: "@user_twitter",
+		Username:  user.Username,
+		TwitterID: user.TwitterID,
 		Message:   "Profile retrieved successfully",
 	}
 

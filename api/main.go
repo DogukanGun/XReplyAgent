@@ -24,22 +24,25 @@ package main
 import (
 	"context"
 	"fmt"
+	httpSwagger "github.com/swaggo/http-swagger"
 	"log"
 	"net/http"
+	"os"
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	httpSwagger "github.com/swaggo/http-swagger"
 	"google.golang.org/api/option"
 
 	"cg-mentions-bot/api/handlers"
 	_ "cg-mentions-bot/docs"
+	"cg-mentions-bot/internal/utils/db"
 )
 
 func main() {
 	ctx := context.Background()
 
+	// Initialize Firebase
 	app, err := firebase.NewApp(ctx, nil, option.WithCredentialsFile("api/firebase-service-account.json"))
 	if err != nil {
 		log.Fatalf("Error initializing Firebase app: %v", err)
@@ -49,6 +52,20 @@ func main() {
 	if err != nil {
 		log.Fatalf("Error getting Firebase Auth client: %v", err)
 	}
+
+	// Initialize MongoDB connection
+	mongoURI := os.Getenv("MONGODB_URI")
+	if mongoURI == "" {
+		mongoURI = "mongodb://localhost:27017" // Default for local development
+	}
+
+	dbClient, err := db.ConnectToDB(mongoURI)
+	if err != nil {
+		log.Fatalf("Error connecting to MongoDB: %v", err)
+	}
+
+	// Set database client for handlers
+	handlers.SetDBClient(dbClient)
 
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
@@ -62,16 +79,20 @@ func main() {
 		}
 	})
 
+	r.Route("/api", func(r chi.Router) {
+		r.Use(AuthMiddleware(authClient))
+		r.Route("/user", func(r chi.Router) {
+			r.Get("/check", handlers.CheckUserHandler)
+			r.Post("/register", handlers.RegisterUserHandler)
+			r.Get("/profile", handlers.GetProfileHandler)
+		})
+		r.Post("/execute-app", handlers.ExecuteAppHandler)
+	})
+
 	// Swagger endpoint
 	r.Get("/swagger/*", httpSwagger.Handler(
 		httpSwagger.URL("http://localhost:3000/swagger/doc.json"),
 	))
-
-	r.Route("/api", func(r chi.Router) {
-		r.Use(AuthMiddleware(authClient))
-		r.Post("/execute-app", handlers.ExecuteAppHandler)
-		r.Get("/profile", handlers.GetProfileHandler)
-	})
 
 	log.Printf("Server starting on port 3000...")
 	err = http.ListenAndServe(":3000", r)
