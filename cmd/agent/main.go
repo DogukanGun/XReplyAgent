@@ -53,7 +53,7 @@ func (m *mcpHTTP) call(name string, args map[string]any) (string, error) {
 				Type string `json:"type"`
 				Text string `json:"text"`
 			} `json:"content"`
-			IsError bool `json:"isError"`
+			//IsError bool `json:"isError"`
 		} `json:"result"`
 	}
 	if _, err := postJSON(m.hc, m.base, map[string]any{
@@ -62,12 +62,12 @@ func (m *mcpHTTP) call(name string, args map[string]any) (string, error) {
 	}, &out); err != nil {
 		return "", err
 	}
-	if out.Result.IsError {
-		if len(out.Result.Content) > 0 && strings.TrimSpace(out.Result.Content[0].Text) != "" {
-			return "", fmt.Errorf(out.Result.Content[0].Text)
-		}
-		return "", fmt.Errorf("tool call failed: %s", name)
-	}
+	// if out.Result.IsError {
+	// 	if len(out.Result.Content) > 0 && strings.TrimSpace(out.Result.Content[0].Text) != "" {
+	// 		return "", fmt.Errorf(out.Result.Content[0].Text)
+	// 	}
+	// 	return "", fmt.Errorf("tool call failed: %s", name)
+	// }
 	if len(out.Result.Content) == 0 {
 		return "", nil
 	}
@@ -486,10 +486,10 @@ func main() {
 		prompt := q
 		prompt = fmt.Sprintf("%s . User\\'s twitter_id is %s", prompt, strings.TrimSpace(*twitterId))
 		if strings.TrimSpace(*replyTo) != "" {
-			prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. You are an ai agent that manages wallets of user via commands from their tweets. "+
-				"Each answer you are going to give is gonna be posted in twitter. So whenever you answer, write as directly answering the question"+
-				"Do never share private key or twitter id in x messages. Then reply to tweet %s using x_post_reply. Also user\\'s twitter_id is %s . "+
-				"And whenever an operation in blockchain is done please give transaction hash in the response",
+			prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. You are an AI agent that manages user wallets via tweet commands. "+
+				"Your reply will be posted on X; write concise, user-facing text. "+
+				"Never share private keys or the twitter_id in the reply. Then reply to tweet %s using x_post_reply. Also user\\'s twitter_id is %s. "+
+				"If a blockchain transaction is executed (e.g., a transfer), include its transaction hash; for wallet creation or reads, provide the wallet address.",
 				prompt, strings.TrimSpace(*replyTo), strings.TrimSpace(*twitterId))
 		}
 
