@@ -53,6 +53,7 @@ func (m *mcpHTTP) call(name string, args map[string]any) (string, error) {
 				Type string `json:"type"`
 				Text string `json:"text"`
 			} `json:"content"`
+			IsError bool `json:"isError"`
 		} `json:"result"`
 	}
 	if _, err := postJSON(m.hc, m.base, map[string]any{
@@ -60,6 +61,12 @@ func (m *mcpHTTP) call(name string, args map[string]any) (string, error) {
 		"params": map[string]any{"name": name, "arguments": args},
 	}, &out); err != nil {
 		return "", err
+	}
+	if out.Result.IsError {
+		if len(out.Result.Content) > 0 && strings.TrimSpace(out.Result.Content[0].Text) != "" {
+			return "", fmt.Errorf(out.Result.Content[0].Text)
+		}
+		return "", fmt.Errorf("tool call failed: %s", name)
 	}
 	if len(out.Result.Content) == 0 {
 		return "", nil
