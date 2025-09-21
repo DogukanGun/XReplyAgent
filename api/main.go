@@ -91,11 +91,11 @@ func main() {
 
 	// Swagger endpoint
 	r.Get("/swagger/*", httpSwagger.Handler(
-		httpSwagger.URL("http://localhost:3000/swagger/doc.json"),
+		httpSwagger.URL("http://localhost:3002/swagger/doc.json"),
 	))
 
-	log.Printf("Server starting on port 3000...")
-	err = http.ListenAndServe(":3000", r)
+	log.Printf("Server starting on port 3002...")
+	err = http.ListenAndServe(":3002", r)
 	if err != nil {
 		log.Fatalf("Error starting server: %v", err)
 	}
