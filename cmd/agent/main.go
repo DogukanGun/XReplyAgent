@@ -141,28 +141,28 @@ func (t xTool) Call(ctx context.Context, input string) (string, error) {
 	return t.client.call("twitter.post_reply", a)
 }
 
-func cgDiscoveredTools(cg *mcpHTTP) ([]tools.Tool, error) {
-	raw, err := cg.listTools()
-	if err != nil {
-		return nil, err
-	}
-	out := make([]tools.Tool, 0, len(raw))
-	for _, t := range raw {
-		name, _ := t["name"].(string)
-		if name == "" {
-			continue
-		}
-		description, _ := t["description"].(string)
-		// include inputSchema (if any) as a compact JSON to guide the LLM
-		// if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
-		// 	if b, err := json.Marshal(schemaVal); err == nil {
-		// 		description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
-		// 	}
-		// }
-		out = append(out, genericMCPTool{client: cg, name: name, desc: description})
-	}
-	return out, nil
-}
+// func cgDiscoveredTools(cg *mcpHTTP) ([]tools.Tool, error) {
+// 	raw, err := cg.listTools()
+// 	if err != nil {
+// 		return nil, err
+// 	}
+// 	out := make([]tools.Tool, 0, len(raw))
+// 	for _, t := range raw {
+// 		name, _ := t["name"].(string)
+// 		if name == "" {
+// 			continue
+// 		}
+// 		description, _ := t["description"].(string)
+// 		// include inputSchema (if any) as a compact JSON to guide the LLM
+// 		// if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
+// 		// 	if b, err := json.Marshal(schemaVal); err == nil {
+// 		// 		description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
+// 		// 	}
+// 		// }
+// 		out = append(out, genericMCPTool{client: cg, name: name, desc: description})
+// 	}
+// 	return out, nil
+// }
 
 // grDiscoveredTools discovers tools exposed by the GoldRush HTTP MCP server and
 // converts them to LangChainGo tools for the agent.
@@ -179,11 +179,11 @@ func grDiscoveredTools(gr *mcpHTTP) ([]tools.Tool, error) {
 		}
 		description, _ := t["description"].(string)
 		// include inputSchema (if any) as a compact JSON to guide the LLM
-		// if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
-		// 	if b, err := json.Marshal(schemaVal); err == nil {
-		// 		description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
-		// 	}
-		// }
+		if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
+			if b, err := json.Marshal(schemaVal); err == nil {
+				description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
+			}
+		}
 		out = append(out, genericMCPTool{client: gr, name: name, desc: description})
 	}
 	return out, nil
@@ -263,7 +263,8 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 		return "", nil
 	}
 
-	cg := newMCP(cgURL)
+	// cg disabled to reduce token usage
+	// cg := newMCP(cgURL)
 	x := newMCP(xURL)
 	gr := newMCP(goldrushURL)
 	wl := newMCP(walletMcpUrl)
@@ -278,10 +279,10 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 		}
 	}
 
-	cgTools, err := cgDiscoveredTools(cg)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "failed to discover CG tools:", err)
-	}
+	// cgTools, err := cgDiscoveredTools(cg)
+	// if err != nil {
+	// 	fmt.Fprintln(os.Stderr, "failed to discover CG tools:", err)
+	// }
 	grTools, err := grDiscoveredTools(gr)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
@@ -291,8 +292,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 		fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
 	}
 
-	toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+len(wlTools)+len(bnbTools)+2)
-	toolsList = append(toolsList, cgTools...)
+	toolsList := make([]tools.Tool, 0, len(grTools)+len(wlTools)+len(bnbTools)+2)
 	toolsList = append(toolsList, grTools...)
 	toolsList = append(toolsList, xTool{client: x})
 	toolsList = append(toolsList, bnbTools...)
@@ -411,7 +411,8 @@ func main() {
 			os.Exit(1)
 		}
 
-		cg := newMCP(cgURL)
+		// cg disabled to reduce token usage
+		// cg := newMCP(cgURL)
 		x := newMCP(xURL)
 		gr := newMCP(goldrushURL)
 		wl := newMCP(walletMcpUrl)
@@ -426,11 +427,11 @@ func main() {
 			}
 		}
 
-		cgTools, err := cgDiscoveredTools(cg)
-		if err != nil {
-			fmt.Fprintln(os.Stderr, "failed to discover CG tools:", err)
-			os.Exit(1)
-		}
+		// cgTools, err := cgDiscoveredTools(cg)
+		// if err != nil {
+		// 	fmt.Fprintln(os.Stderr, "failed to discover CG tools:", err)
+		// 	os.Exit(1)
+		// }
 		grTools, err := grDiscoveredTools(gr)
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
@@ -444,8 +445,7 @@ func main() {
 			}
 		}
 
-		toolsList := make([]tools.Tool, 0, len(cgTools)+len(grTools)+len(bnbTools)+1)
-		toolsList = append(toolsList, cgTools...)
+		toolsList := make([]tools.Tool, 0, len(grTools)+len(bnbTools)+1)
 		toolsList = append(toolsList, grTools...)
 		toolsList = append(toolsList, xTool{client: x})
 		toolsList = append(toolsList, bnbTools...)
