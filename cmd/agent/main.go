@@ -239,13 +239,13 @@ func bnbDiscoveredTools(bnb *mcpHTTP) ([]tools.Tool, error) {
 }
 
 func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
-	cgURL := os.Getenv("CG_MCP_HTTP")
+	// cgURL := os.Getenv("CG_MCP_HTTP") // CoinGecko disabled to reduce token usage
 	xURL := os.Getenv("X_MCP_HTTP")
-	goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
+	// goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP") // GoldRush disabled for now
 	walletMcpUrl := os.Getenv("WALLET_MCP_HTTP")
 	bnbHttpURL := os.Getenv("BNB_MCP_HTTP")
-	if cgURL == "" || xURL == "" || goldrushURL == "" {
-		fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
+	if xURL == "" {
+		fmt.Fprintln(os.Stderr, "Set X_MCP_HTTP (e.g., http://localhost:8081/mcp)")
 		return "", nil
 	}
 
@@ -266,7 +266,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	// cg disabled to reduce token usage
 	// cg := newMCP(cgURL)
 	x := newMCP(xURL)
-	gr := newMCP(goldrushURL)
+	// gr := newMCP(goldrushURL) // GoldRush disabled
 	wl := newMCP(walletMcpUrl)
 
 	// Initialize BNB tools: prefer HTTP MCP proxy; fallback to SSE proxy tool
@@ -283,17 +283,16 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	// if err != nil {
 	// 	fmt.Fprintln(os.Stderr, "failed to discover CG tools:", err)
 	// }
-	grTools, err := grDiscoveredTools(gr)
-	if err != nil {
-		fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
-	}
+	// grTools, err := grDiscoveredTools(gr)
+	// if err != nil {
+	// 	fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
+	// }
 	wlTools, err := wlDiscoveredTools(wl)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
 	}
 
-	toolsList := make([]tools.Tool, 0, len(grTools)+len(wlTools)+len(bnbTools)+2)
-	toolsList = append(toolsList, grTools...)
+	toolsList := make([]tools.Tool, 0, len(wlTools)+len(bnbTools)+2)
 	toolsList = append(toolsList, xTool{client: x})
 	toolsList = append(toolsList, bnbTools...)
 	toolsList = append(toolsList, wlTools...)
@@ -382,13 +381,13 @@ func main() {
 	if testModeOn == "YES" {
 		provideTester()
 	} else {
-		cgURL := os.Getenv("CG_MCP_HTTP")
+		// cgURL := os.Getenv("CG_MCP_HTTP") // CoinGecko disabled
 		xURL := os.Getenv("X_MCP_HTTP")
-		goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP")
+		// goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP") // GoldRush disabled
 		walletMcpUrl := os.Getenv("WALLET_MCP_HTTP")
 		bnbHttpURL := os.Getenv("BNB_MCP_HTTP")
-		if cgURL == "" || xURL == "" || goldrushURL == "" {
-			fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
+		if xURL == "" {
+			fmt.Fprintln(os.Stderr, "Set X_MCP_HTTP (e.g., http://localhost:8081/mcp)")
 			os.Exit(1)
 		}
 
@@ -414,7 +413,7 @@ func main() {
 		// cg disabled to reduce token usage
 		// cg := newMCP(cgURL)
 		x := newMCP(xURL)
-		gr := newMCP(goldrushURL)
+		// gr := newMCP(goldrushURL)
 		wl := newMCP(walletMcpUrl)
 
 		// Initialize BNB tools: prefer HTTP MCP proxy; fallback to SSE proxy tool
@@ -432,21 +431,17 @@ func main() {
 		// 	fmt.Fprintln(os.Stderr, "failed to discover CG tools:", err)
 		// 	os.Exit(1)
 		// }
-		grTools, err := grDiscoveredTools(gr)
+		// grTools, err := grDiscoveredTools(gr)
+		// if err != nil {
+		// 	fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
+		// 	os.Exit(1)
+		// }
+		wlTools, err := wlDiscoveredTools(wl)
 		if err != nil {
-			fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
-			os.Exit(1)
-		}
-		var wlTools []tools.Tool
-		if walletMcpUrl != "" {
-			wlTools, err = wlDiscoveredTools(wl)
-			if err != nil {
-				fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
-			}
+			fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
 		}
 
-		toolsList := make([]tools.Tool, 0, len(grTools)+len(bnbTools)+1)
-		toolsList = append(toolsList, grTools...)
+		toolsList := make([]tools.Tool, 0, len(bnbTools)+len(wlTools)+2)
 		toolsList = append(toolsList, xTool{client: x})
 		toolsList = append(toolsList, bnbTools...)
 		toolsList = append(toolsList, wlTools...)
