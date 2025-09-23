@@ -90,8 +90,12 @@ func main() {
 	})
 
 	// Swagger endpoint
+	swaggerURL := "http://localhost:3002/swagger/doc.json"
+	if os.Getenv("ENV") == "prod" {
+		swaggerURL = "https://api.nexarb.com/swagger/doc.json"
+	}
 	r.Get("/swagger/*", httpSwagger.Handler(
-		httpSwagger.URL("http://localhost:3002/swagger/doc.json"),
+		httpSwagger.URL(swaggerURL),
 	))
 
 	log.Printf("Server starting on port 3002...")
