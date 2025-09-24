@@ -1,23 +1,24 @@
 ## XReplyAgent 🤖
 
-Automated X/Twitter mention responder powered by MCP servers and a LangChain agent. It reads mention events (e.g., from an n8n workflow), chooses the right tool (CoinGecko, GoldRush), generates an answer, and optionally posts a reply on X.
+Automated X/Twitter mention responder powered by MCP servers and a LangChain agent. It reads mention events (e.g., from an n8n workflow), chooses the right tool (CoinGecko, GoldRush, BNB MCP, Wallet MCP), generates an answer, and optionally posts a reply on X.
 
 ### Why
 - **Faster support**: Answer crypto data questions at mention time.
-- **Tool-orchestration**: Use multiple MCP servers (CoinGecko, GoldRush) via an agent.
+- **Tool-orchestration**: Use multiple MCP servers (BNB, Wallet, CoinGecko, GoldRush) via an agent.
 - **Hands-free posting**: Reply under the original tweet through an X MCP.
 
-### Hyperliquid extension goal 🧭
-XReplyAgent showcases how the Hyperliquid ecosystem can be made more accessible and engaging directly on X:
-- **Ask-on-X**: Community members can mention your account and ask about Hyperliquid topics (e.g., HLP price, token movements, transaction details), receiving answers in-reply, in seconds.
-- **Right tool for the job**: The agent routes price/market questions to CoinGecko MCP and on‑chain activity questions (balances, transfers, gas, transaction lookups) to the GoldRush MCP.
-- **Frictionless onboarding**: No dashboards or query builders—natural‑language questions on X become live, contextual responses, increasing Hyperliquid awareness and engagement.
-- **Extensible**: New Hyperliquid‑specific tools can be added as MCP endpoints, and the agent will automatically consider them.
+### BNB Chain hackathon focus 🟡
+We customized and integrated a BNB Chain MCP to deliver a social, X-native wallet experience:
+- **BNB MCP (customized SSE)**: We tweaked the BNB MCP server to expose rich EVM + Greenfield tools over SSE for real-time, robust operations on BSC/opBNB/Greenfield.
+- **Twitter ID → Wallet mapping**: Mentions include a user identifier; the agent and Wallet MCP bind that Twitter ID to a per-user wallet, enabling “social wallets” that are controlled via tweets.
+- **Wallet MCP for user onboarding**: The Wallet MCP can create wallets on demand, sign transactions, query balances, and perform transfers—securely persisted (MongoDB) and referenced by Twitter ID.
+- **Agent orchestration**: The agent selects between CoinGecko (prices), GoldRush (on‑chain analytics), BNB MCP (chain ops), and X MCP (posting), sanitizes responses, and posts the final answer under the mention.
 
-Examples the agent can answer for Hyperliquid users:
-- “What’s the price of HLP right now?” → CoinGecko MCP.
-- “Show the last 3 ERC20 transfers of the HLP contract on ethereum; brief summary.” → GoldRush MCP.
-- “Give me the native balance and recent activity for 0x… on base; 1 line.” → GoldRush MCP.
+Example BNB-centric requests the agent can handle:
+- “Create a wallet for me on BSC testnet.” → Wallet MCP (per‑Twitter ID wallet).
+- “What is my wallet address?” → Wallet MCP (lookup by Twitter ID).
+- “Send 0.01 BNB to 0x… on testnet; confirm with tx hash.” → Wallet MCP + BNB MCP.
+- “Show my last 3 transactions on BSC; short summary.” → BNB MCP.
 
 ---
 
@@ -192,6 +193,26 @@ curl -s -X POST http://localhost:8080/mentions \
 Side note: If the bnb mcp server is wanted to test, please put a test author id that is from db and the related wallet should have test tokens.
 
 Replies under a tweet are handled automatically by the agent when invoked by the bot; no extra flags are needed in normal operation.
+
+### BNB: Ask for your wallet address (after creating a wallet) 🟡
+```bash
+curl -s -X POST http://localhost:8080/mentions \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "count":1,
+    "mentions":[
+      {
+        "tweet_id":"1966236681595670934",
+        "text":"what is my wallet address?",
+        "twitter_id":"65acb7120c67c6c",
+        "author_username":"alice",
+        "conversation_id":"1956374656836907309",
+        "created_at":"2025-08-15T10:00:00.000Z"
+      }
+    ],
+    "meta":{}
+  }'
+```
 
 ---
 

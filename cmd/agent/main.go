@@ -53,6 +53,7 @@ func (m *mcpHTTP) call(name string, args map[string]any) (string, error) {
 				Type string `json:"type"`
 				Text string `json:"text"`
 			} `json:"content"`
+			//IsError bool `json:"isError"`
 		} `json:"result"`
 	}
 	if _, err := postJSON(m.hc, m.base, map[string]any{
@@ -61,6 +62,12 @@ func (m *mcpHTTP) call(name string, args map[string]any) (string, error) {
 	}, &out); err != nil {
 		return "", err
 	}
+	// if out.Result.IsError {
+	// 	if len(out.Result.Content) > 0 && strings.TrimSpace(out.Result.Content[0].Text) != "" {
+	// 		return "", fmt.Errorf(out.Result.Content[0].Text)
+	// 	}
+	// 	return "", fmt.Errorf("tool call failed: %s", name)
+	// }
 	if len(out.Result.Content) == 0 {
 		return "", nil
 	}
@@ -147,11 +154,11 @@ func cgDiscoveredTools(cg *mcpHTTP) ([]tools.Tool, error) {
 		}
 		description, _ := t["description"].(string)
 		// include inputSchema (if any) as a compact JSON to guide the LLM
-		if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
-			if b, err := json.Marshal(schemaVal); err == nil {
-				description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
-			}
-		}
+		// if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
+		// 	if b, err := json.Marshal(schemaVal); err == nil {
+		// 		description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
+		// 	}
+		// }
 		out = append(out, genericMCPTool{client: cg, name: name, desc: description})
 	}
 	return out, nil
@@ -172,12 +179,36 @@ func grDiscoveredTools(gr *mcpHTTP) ([]tools.Tool, error) {
 		}
 		description, _ := t["description"].(string)
 		// include inputSchema (if any) as a compact JSON to guide the LLM
+		// if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
+		// 	if b, err := json.Marshal(schemaVal); err == nil {
+		// 		description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
+		// 	}
+		// }
+		out = append(out, genericMCPTool{client: gr, name: name, desc: description})
+	}
+	return out, nil
+}
+
+// wlDiscoveredTools discovers tools exposed by the Wallet HTTP MCP server and
+// includes inputSchema details to guide the LLM on argument structure.
+func wlDiscoveredTools(wl *mcpHTTP) ([]tools.Tool, error) {
+	raw, err := wl.listTools()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]tools.Tool, 0, len(raw))
+	for _, t := range raw {
+		name, _ := t["name"].(string)
+		if name == "" {
+			continue
+		}
+		description, _ := t["description"].(string)
 		if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
 			if b, err := json.Marshal(schemaVal); err == nil {
 				description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
 			}
 		}
-		out = append(out, genericMCPTool{client: gr, name: name, desc: description})
+		out = append(out, genericMCPTool{client: wl, name: name, desc: description})
 	}
 	return out, nil
 }
@@ -255,7 +286,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
 	}
-	wlTools, err := grDiscoveredTools(wl)
+	wlTools, err := wlDiscoveredTools(wl)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
 	}
@@ -281,7 +312,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 		llm,
 		toolsList,
 		agents.ZeroShotReactDescription,
-		agents.WithMaxIterations(20),
+		agents.WithMaxIterations(10),
 		agents.WithParserErrorHandler(peh),
 	)
 	if err != nil {
@@ -405,7 +436,7 @@ func main() {
 		}
 		var wlTools []tools.Tool
 		if walletMcpUrl != "" {
-			wlTools, err = grDiscoveredTools(wl)
+			wlTools, err = wlDiscoveredTools(wl)
 			if err != nil {
 				fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
 			}
@@ -432,7 +463,7 @@ func main() {
 			llm,
 			toolsList,
 			agents.ZeroShotReactDescription,
-			agents.WithMaxIterations(20),
+			agents.WithMaxIterations(10),
 			agents.WithParserErrorHandler(peh),
 		)
 		if err != nil {
@@ -440,13 +471,25 @@ func main() {
 			os.Exit(1)
 		}
 
+		// Create wallet for the user if twitter_id is provided and wallet MCP is available
+		fmt.Println("Users twitter id", *twitterId)
+		if strings.TrimSpace(*twitterId) != "" {
+			resFromCreateWallet, err := wl.call("create_wallet", map[string]any{
+				"twitter_id": strings.TrimSpace(*twitterId),
+			})
+			if err != nil {
+				fmt.Fprintln(os.Stderr, "failed to create wallet:", err)
+			}
+			fmt.Println("here is the result of create new wallet: ", resFromCreateWallet)
+		}
+
 		prompt := q
 		prompt = fmt.Sprintf("%s . User\\'s twitter_id is %s", prompt, strings.TrimSpace(*twitterId))
 		if strings.TrimSpace(*replyTo) != "" {
-			prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. You are an ai agent that manages wallets of user via commands form their tweets. "+
-				"Each answer you are going to give is gonna be posted in twitter. So whenever you answer, write as directly asnwering the question"+
-				"Do never share private key or twitter id in x messages. Then reply to tweet %s using x_post_reply.Also user\\'s twitter_id is %s . "+
-				"And whenever an operation in blockchain is done please give transaction hash in the response",
+			prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. You are an AI agent that manages user wallets via tweet commands. "+
+				"Your reply will be posted on X; write concise, user-facing text. "+
+				"Never share private keys or the twitter_id in the reply. Then reply to tweet %s using x_post_reply. Also user\\'s twitter_id is %s. "+
+				"If a blockchain transaction is executed (e.g., a transfer), include its transaction hash; for wallet creation or reads, provide the wallet address.",
 				prompt, strings.TrimSpace(*replyTo), strings.TrimSpace(*twitterId))
 		}
 

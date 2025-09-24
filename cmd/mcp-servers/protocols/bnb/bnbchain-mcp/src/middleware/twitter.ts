@@ -15,7 +15,7 @@ export function withTwitterAuth<P extends Record<string, any> & { twitter_id?: s
 
     const user = await getUserByTwitterId(twitter_id)
     if (!user) {
-      throw new Error(`No user found for twitter_id=${twitter_id}`)
+      throw new Error(`No user found for twitter_id=${twitter_id}, please create a wallet`)
     }
 
     Logger.info(`Tool call${toolName ? ` [${toolName}]` : ''} by ${twitter_id}`)
