@@ -22,7 +22,7 @@ RUN go install github.com/swaggo/swag/cmd/swag@latest
 
 # Generate swagger docs with dynamic host replacement
 RUN swag init -g ./api/main.go -o ./api/docs
-RUN sed -i "s/localhost:3002/${SWAGGER_HOST}/g" ./docs/swagger.json
+RUN sed -i "s/localhost:3002/${SWAGGER_HOST}/g" ./api/docs/swagger.json
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./api
