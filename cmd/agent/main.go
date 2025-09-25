@@ -238,13 +238,38 @@ func discoveredTools(bnb *mcpHTTP) ([]tools.Tool, error) {
 	return out, nil
 }
 
+// moveDiscoveredTools discovers tools exposed by the MOVE HTTP MCP proxy server
+// and converts them to LangChainGo tools for the agent.
+func moveDiscoveredTools(move *mcpHTTP) ([]tools.Tool, error) {
+	raw, err := move.listTools()
+	if err != nil {
+		return nil, err
+	}
+	out := make([]tools.Tool, 0, len(raw))
+	for _, t := range raw {
+		name, _ := t["name"].(string)
+		if name == "" {
+			continue
+		}
+		description, _ := t["description"].(string)
+		// include inputSchema (if any) as a compact JSON to guide the LLM
+		if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
+			if b, err := json.Marshal(schemaVal); err == nil {
+				description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
+			}
+		}
+		out = append(out, genericMCPTool{client: move, name: name, desc: description})
+	}
+	return out, nil
+}
+
 func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	// cgURL := os.Getenv("CG_MCP_HTTP") // CoinGecko disabled to reduce token usage
 	xURL := os.Getenv("X_MCP_HTTP")
 	// goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP") // GoldRush disabled for now
 	walletMcpUrl := os.Getenv("WALLET_MCP_HTTP")
 	bnbHttpURL := os.Getenv("BNB_MCP_HTTP")
-	aptosHttpURL := os.Getenv("APTOS_MCP_HTTP")
+	moveHttpURL := os.Getenv("MOVE_MCP_HTTP")
 	if xURL == "" {
 		fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
 		return "", nil
@@ -280,12 +305,12 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 		}
 	}
 
-	var aptosTools []tools.Tool
-	if strings.TrimSpace(aptosHttpURL) != "" {
-		if t, err := discoveredTools(newMCP(aptosHttpURL)); err == nil {
-			aptosTools = t
+	var moveTools []tools.Tool
+	if strings.TrimSpace(moveHttpURL) != "" {
+		if t, err := moveDiscoveredTools(newMCP(moveHttpURL)); err == nil {
+			moveTools = t
 		} else {
-			fmt.Fprintln(os.Stderr, "failed to discover BNB HTTP tools:", err)
+			fmt.Fprintln(os.Stderr, "failed to discover MOVE HTTP tools:", err)
 		}
 	}
 
@@ -302,10 +327,10 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 		fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
 	}
 
-	toolsList := make([]tools.Tool, 0, len(wlTools)+len(aptosTools)+len(bnbTools)+2)
+	toolsList := make([]tools.Tool, 0, len(wlTools)+len(moveTools)+len(bnbTools)+2)
 	toolsList = append(toolsList, xTool{client: x})
 	toolsList = append(toolsList, bnbTools...)
-	toolsList = append(toolsList, aptosTools...)
+	toolsList = append(toolsList, moveTools...)
 	toolsList = append(toolsList, wlTools...)
 	model := os.Getenv("OPENAI_MODEL")
 	if model == "" {
@@ -395,6 +420,7 @@ func main() {
 		// goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP") // GoldRush disabled
 		walletMcpUrl := os.Getenv("WALLET_MCP_HTTP")
 		bnbHttpURL := os.Getenv("BNB_MCP_HTTP")
+		moveHttpURL := os.Getenv("MOVE_MCP_HTTP")
 		if xURL == "" {
 			fmt.Fprintln(os.Stderr, "Set X_MCP_HTTP (e.g., http://localhost:8081/mcp)")
 			os.Exit(1)
@@ -435,6 +461,16 @@ func main() {
 			}
 		}
 
+		var moveTools []tools.Tool
+		if strings.TrimSpace(moveHttpURL) != "" {
+			if t, err := moveDiscoveredTools(newMCP(moveHttpURL)); err == nil {
+				fmt.Println("Move tools are fetched")
+				moveTools = t
+			} else {
+				fmt.Fprintln(os.Stderr, "failed to discover MOVE HTTP tools:", err)
+			}
+		}
+
 		// cgTools, err := cgDiscoveredTools(cg)
 		// if err != nil {
 		// 	fmt.Fprintln(os.Stderr, "failed to discover CG tools:", err)
@@ -450,9 +486,10 @@ func main() {
 			fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
 		}
 
-		toolsList := make([]tools.Tool, 0, len(bnbTools)+len(wlTools)+2)
+		toolsList := make([]tools.Tool, 0, len(bnbTools)+len(wlTools)+len(moveTools)+2)
 		toolsList = append(toolsList, xTool{client: x})
 		toolsList = append(toolsList, bnbTools...)
+		toolsList = append(toolsList, moveTools...)
 		toolsList = append(toolsList, wlTools...)
 		model := os.Getenv("OPENAI_MODEL")
 		if model == "" {
@@ -517,6 +554,7 @@ func main() {
 
 		// Extract and sanitize final answer
 		answer, _ := out["output"].(string)
+		log.Println("Agent answer is : ", answer)
 		answer = sanitizeFinalAnswer(answer)
 
 		// If a reply target was given, post the agent's answer using the X MCP directly.

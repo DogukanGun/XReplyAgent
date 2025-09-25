@@ -48,6 +48,7 @@ func main() {
 		t := tool // capture
 		s.AddTool(t, func(ctx context.Context, req mcp.CallToolRequest) (*mcp.CallToolResult, error) {
 			// Forward to upstream via the persistent SSE client
+			log.Printf("Forwarding tool call: %s with args: %v", req.Params.Name, req.GetArguments())
 			ctx2, cancel := context.WithTimeout(ctx, 120*time.Second)
 			defer cancel()
 			res, err := mcpCl.CallTool(ctx2, mcp.CallToolRequest{
@@ -57,8 +58,10 @@ func main() {
 				},
 			})
 			if err != nil {
+				log.Printf("Error calling upstream tool: %v", err)
 				return mcp.NewToolResultError(err.Error()), nil
 			}
+			log.Printf("Received response from upstream: %+v", res)
 			return res, nil
 		})
 	}
