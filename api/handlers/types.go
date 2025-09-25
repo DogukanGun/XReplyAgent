@@ -18,9 +18,13 @@ var UserCollection = db.MongoDB{
 
 // User model for database
 type User struct {
-	FirebaseID string `bson:"firebase_id" json:"firebase_id"`
-	TwitterID  string `bson:"twitter_id" json:"twitter_id"`
-	Username   string `bson:"username" json:"username"`
+	FirebaseID       string `bson:"firebase_id" json:"firebase_id"`
+	TwitterID        string `bson:"twitter_id" json:"twitter_id"`
+	Username         string `bson:"username" json:"username"`
+	EthPublicKey     string `bson:"eth_public_key,omitempty" json:"eth_public_key,omitempty"`
+	EthPrivateKey    string `bson:"eth_private_key,omitempty" json:"eth_private_key,omitempty"`
+	SolanaPublicKey  string `bson:"solana_public_key,omitempty" json:"solana_public_key,omitempty"`
+	SolanaPrivateKey string `bson:"solana_private_key,omitempty" json:"solana_private_key,omitempty"`
 }
 
 type CheckUserResponse struct {
@@ -32,11 +36,24 @@ type RegisterUserRequest struct {
 	Username  string `json:"username"`
 }
 
+type WalletKeys struct {
+	EthWallet    WalletKeyPair `json:"eth_wallet"`
+	SolanaWallet WalletKeyPair `json:"solana_wallet"`
+}
+
+type WalletKeyPair struct {
+	PublicAddress string `json:"public_address"`
+	PrivateKey    string `json:"private_key"`
+}
+
 type RegisterUserResponse struct {
-	UID       string `json:"uid"`
-	TwitterID string `json:"twitter_id"`
-	Username  string `json:"username"`
-	Message   string `json:"message"`
+	UID       string     `json:"uid"`
+	TwitterID string     `json:"twitter_id"`
+	Username  string     `json:"username"`
+	Message   string     `json:"message"`
+	Wallets   WalletKeys `json:"wallets"`
+	// Backward compatibility
+	PrivateKey string `json:"private_key,omitempty"`
 }
 
 type ExecuteAppRequest struct {

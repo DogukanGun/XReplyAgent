@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"cg-mentions-bot/internal/services"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -63,8 +64,31 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Save user to database
-	success := CreateUser(firebaseID, req.TwitterID, req.Username)
+	// Create or get wallets for the user
+	walletService := services.NewWalletService(DBClient)
+	walletKeys, err := walletService.CreateOrGetWallet(req.TwitterID)
+	if err != nil {
+		log.Printf("Failed to create wallets: %v", err)
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusInternalServerError)
+		if err := json.NewEncoder(w).Encode(ErrorResponse{Error: "Failed to create wallets"}); err != nil {
+			log.Printf("Error encoding response: %v", err)
+		}
+		return
+	}
+
+	// Save user to database with wallet keys
+	user := User{
+		FirebaseID:       firebaseID,
+		TwitterID:        req.TwitterID,
+		Username:         req.Username,
+		EthPublicKey:     walletKeys.EthWallet.PublicAddress,
+		EthPrivateKey:    walletKeys.EthWallet.PrivateKey,
+		SolanaPublicKey:  walletKeys.SolanaWallet.PublicAddress,
+		SolanaPrivateKey: walletKeys.SolanaWallet.PrivateKey,
+	}
+
+	success := CreateUserWithWallet(user)
 	if !success {
 		log.Printf("Failed to save user to database")
 		w.Header().Set("Content-Type", "application/json")
@@ -80,6 +104,18 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 		TwitterID: req.TwitterID,
 		Username:  req.Username,
 		Message:   "User registered successfully",
+		Wallets: WalletKeys{
+			EthWallet: WalletKeyPair{
+				PublicAddress: walletKeys.EthWallet.PublicAddress,
+				PrivateKey:    walletKeys.EthWallet.PrivateKey,
+			},
+			SolanaWallet: WalletKeyPair{
+				PublicAddress: walletKeys.SolanaWallet.PublicAddress,
+				PrivateKey:    walletKeys.SolanaWallet.PrivateKey,
+			},
+		},
+		// Backward compatibility
+		PrivateKey: walletKeys.EthWallet.PrivateKey,
 	}
 
 	w.Header().Set("Content-Type", "application/json")

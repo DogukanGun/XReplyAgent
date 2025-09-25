@@ -38,6 +38,15 @@ func CreateUser(firebaseID, twitterID, username string) bool {
 	return UserCollection.Insert(DBClient, user)
 }
 
+// CreateUserWithWallet creates a new user in database with wallet information
+func CreateUserWithWallet(user User) bool {
+	if DBClient == nil {
+		return false
+	}
+
+	return UserCollection.Insert(DBClient, user)
+}
+
 // GetUserByFirebaseID gets user from database by Firebase ID
 func GetUserByFirebaseID(firebaseID string) (*User, bool) {
 	if DBClient == nil {

@@ -13,6 +13,12 @@ RUN go mod download
 # Copy the entire project
 COPY . .
 
+# Install swag tool for generating swagger docs
+RUN go install github.com/swaggo/swag/cmd/swag@latest
+
+# Generate swagger docs
+RUN swag init -g ./api/main.go -o ./docs
+
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./api
 
@@ -34,6 +40,9 @@ COPY --from=builder /app/main .
 # Create api directory and copy Firebase service account file
 RUN mkdir -p ./api
 COPY --from=builder /app/api/firebase-service-account.json ./api/
+
+# Copy swagger docs
+COPY --from=builder /app/docs ./docs
 
 # Change ownership of files to appuser
 RUN chown -R appuser:appuser /root/
