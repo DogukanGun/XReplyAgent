@@ -31,13 +31,13 @@ definitions:
     type: object
   handlers.ProfileResponse:
     properties:
-      email:
-        type: string
       message:
         type: string
       twitter_id:
         type: string
       uid:
+        type: string
+      username:
         type: string
     type: object
   handlers.RegisterUserRequest:
@@ -51,12 +51,31 @@ definitions:
     properties:
       message:
         type: string
+      private_key:
+        description: Backward compatibility
+        type: string
       twitter_id:
         type: string
       uid:
         type: string
       username:
         type: string
+      wallets:
+        $ref: '#/definitions/handlers.WalletKeys'
+    type: object
+  handlers.WalletKeyPair:
+    properties:
+      private_key:
+        type: string
+      public_address:
+        type: string
+    type: object
+  handlers.WalletKeys:
+    properties:
+      eth_wallet:
+        $ref: '#/definitions/handlers.WalletKeyPair'
+      solana_wallet:
+        $ref: '#/definitions/handlers.WalletKeyPair'
     type: object
 host: localhost:3000
 info:

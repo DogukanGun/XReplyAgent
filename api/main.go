@@ -34,8 +34,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"google.golang.org/api/option"
 
+	_ "cg-mentions-bot/api/docs"
 	"cg-mentions-bot/api/handlers"
-	_ "cg-mentions-bot/docs"
 	"cg-mentions-bot/internal/utils/db"
 )
 
