@@ -41,9 +41,6 @@ COPY --from=builder /app/main .
 RUN mkdir -p ./api
 COPY --from=builder /app/api/firebase-service-account.json ./api/
 
-# Copy swagger docs
-COPY --from=builder /app/docs ./docs
-
 # Change ownership of files to appuser
 RUN chown -R appuser:appuser /root/
 
