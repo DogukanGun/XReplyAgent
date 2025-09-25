@@ -4,6 +4,7 @@ FROM golang:1.23.2-alpine AS builder
 # Build arguments for configuration
 ARG SWAGGER_HOST=api.nexarb.com
 ARG ENV=prod
+ARG MONGODB_URI=""
 
 # Set working directory
 WORKDIR /app
@@ -56,8 +57,9 @@ EXPOSE 3002
 
 # Set environment variables
 ENV GIN_MODE=release
-ENV MONGODB_URI=mongodb://localhost:27017
 ENV ENV=prod
+# MongoDB URI will be set from build arg or runtime
+ENV MONGODB_URI=${MONGODB_URI}
 
 # Run the binary
 CMD ["./main"]
