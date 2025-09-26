@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"log"
 	"os"
 	"os/exec"
 )
@@ -49,7 +48,6 @@ func NewRunner(agentCmd string) Runner {
 			env = append(env, fmt.Sprintf("OPENAI_MODEL=%s", v))
 		}
 		if v := os.Getenv("APTOS_MCP_HTTP"); v != "" {
-			log.Print("APTOS_MCP_HTTP=", v)
 			env = append(env, fmt.Sprintf("APTOS_MCP_HTTP=%s", v))
 		}
 		cmd.Env = env

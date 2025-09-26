@@ -420,7 +420,7 @@ func main() {
 		// goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP") // GoldRush disabled
 		walletMcpUrl := os.Getenv("WALLET_MCP_HTTP")
 		bnbHttpURL := os.Getenv("BNB_MCP_HTTP")
-		moveHttpURL := os.Getenv("MOVE_MCP_HTTP")
+		moveHttpURL := os.Getenv("APTOS_MCP_HTTP")
 		if xURL == "" {
 			fmt.Fprintln(os.Stderr, "Set X_MCP_HTTP (e.g., http://localhost:8081/mcp)")
 			os.Exit(1)
