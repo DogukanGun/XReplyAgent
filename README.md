@@ -249,7 +249,7 @@ curl -s -X POST http://localhost:8080/mentions \
 - `GOLDRUSH_MCP_HTTP` (e.g., `http://localhost:8083/mcp`)
 - `BNB_AGENT_MCP_SSE` (e.g., `http://localhost:3002/sse`)
 - `WALLET_MCP_HTTP` (e.g., `http://localhost:8084/mcp`)
-- `OPENAI_API_KEY`, `OPENAI_MODEL` (default `gpt-4.1-mini`)
+- `OPENAI_API_KEY`, `OPENAI_MODEL` (default `gpt-4o-mini-2024-07-18`)
 - Flags: `-q`, `-reply-to`, `-ti`
 
 ### Bot
