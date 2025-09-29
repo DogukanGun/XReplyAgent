@@ -53,6 +53,16 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.DeviceIdentifier == "" {
+		log.Printf("Missing device_identifier in request")
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusBadRequest)
+		if err := json.NewEncoder(w).Encode(ErrorResponse{Error: "Missing device_identifier field"}); err != nil {
+			log.Printf("Error encoding response: %v", err)
+		}
+		return
+	}
+
 	firebaseID, ok := r.Context().Value(UidKey).(string)
 	if !ok {
 		log.Printf("Firebase ID not found in request context")
@@ -82,6 +92,7 @@ func RegisterUserHandler(w http.ResponseWriter, r *http.Request) {
 		FirebaseID:       firebaseID,
 		TwitterID:        req.TwitterID,
 		Username:         req.Username,
+		DeviceIdentifier: req.DeviceIdentifier,
 		EthPublicKey:     walletKeys.EthWallet.PublicAddress,
 		EthPrivateKey:    walletKeys.EthWallet.PrivateKey,
 		SolanaPublicKey:  walletKeys.SolanaWallet.PublicAddress,

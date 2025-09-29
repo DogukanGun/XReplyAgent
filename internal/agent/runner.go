@@ -9,14 +9,17 @@ import (
 )
 
 // Runner invokes the agent executable with a question and optional reply-to tweet id.
-type Runner func(ctx context.Context, question string, replyTo string, twitterId string) (string, error)
+type Runner func(ctx context.Context, question string, replyTo string, twitterId string, mentionedPeople []string) (string, error)
 
 // NewRunner constructs a Runner for the given agent command. It inherits the current
 // process environment and optionally overrides common agent envs if set:
 //   - AGENT_CG_MCP_HTTP, AGENT_X_MCP_HTTP, OPENAI_API_KEY, OPENAI_MODEL
 func NewRunner(agentCmd string) Runner {
-	return func(ctx context.Context, question string, replyTo string, twitterId string) (string, error) {
+	return func(ctx context.Context, question string, replyTo string, twitterId string, mentionedPeople []string) (string, error) {
 		args := []string{"-q", question, "-ti", twitterId}
+		if len(mentionedPeople) > 0 {
+			args = append(args, "-m", mentionedPeople[0])
+		}
 		if replyTo != "" {
 			args = append(args, "-reply-to", replyTo)
 		}

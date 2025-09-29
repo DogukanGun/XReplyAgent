@@ -62,3 +62,15 @@ func GetUserByFirebaseID(firebaseID string) (*User, bool) {
 
 	return nil, false
 }
+
+// UpdateUserDeviceIdentifier updates device identifier for existing user
+func UpdateUserDeviceIdentifier(firebaseID, deviceIdentifier string) bool {
+	if DBClient == nil {
+		return false
+	}
+
+	filter := bson.D{{"firebase_id", firebaseID}}
+	update := bson.D{{"$set", bson.D{{"device_identifier", deviceIdentifier}}}}
+
+	return UserCollection.Update(DBClient, filter, update)
+}

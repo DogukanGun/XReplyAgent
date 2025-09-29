@@ -82,11 +82,12 @@ func main() {
 	r.Route("/api", func(r chi.Router) {
 		r.Use(AuthMiddleware(authClient))
 		r.Route("/user", func(r chi.Router) {
-			r.Get("/check", handlers.CheckUserHandler)
+			r.Post("/check", handlers.CheckUserHandler)
 			r.Post("/register", handlers.RegisterUserHandler)
+			r.Post("/session", handlers.NewSessionHandler)
 			r.Get("/profile", handlers.GetProfileHandler)
 		})
-		r.Post("/execute-app", handlers.ExecuteAppHandler)
+		r.Post("/execute", handlers.ExecuteAppHandler)
 	})
 
 	// Swagger endpoint

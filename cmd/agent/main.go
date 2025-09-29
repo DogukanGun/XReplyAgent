@@ -429,6 +429,7 @@ func main() {
 		question := flag.String("q", "", "question to ask the agent (fallback: AGENT_INPUT or stdin)")
 		replyTo := flag.String("reply-to", "", "tweet id to reply under using x_post_reply (optional)")
 		twitterId := flag.String("ti", "", "twitter id of the user that posts it")
+		mentionedUser := flag.String("m", "", "mentioned user that is in the tweet")
 		flag.Parse()
 
 		q := strings.TrimSpace(*question)
@@ -526,14 +527,18 @@ func main() {
 			fmt.Println("here is the result of create new wallet: ", resFromCreateWallet)
 		}
 
+		fmt.Println("Mentioned user", *mentionedUser)
+
 		prompt := q
 		prompt = fmt.Sprintf("%s . User\\'s twitter_id is %s", prompt, strings.TrimSpace(*twitterId))
 		if strings.TrimSpace(*replyTo) != "" {
 			prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. You are an AI agent that manages user wallets via tweet commands. "+
 				"Your reply will be posted on X; write concise, user-facing text. "+
 				"Never share private keys or the twitter_id in the reply. Then reply to tweet %s using x_post_reply. Also user\\'s twitter_id is %s. "+
-				"If a blockchain transaction is executed (e.g., a transfer), include its transaction hash; for wallet creation or reads, provide the wallet address.",
-				prompt, strings.TrimSpace(*replyTo), strings.TrimSpace(*twitterId))
+				"If a blockchain transaction is executed (e.g., a transfer), include its transaction hash; for wallet creation or reads, provide the wallet address."+
+				"Also if user mentions another user like meaning to transfer something to another users, i am giving you possible user that is in tweet. If the input is empty, act like user has not mention"+
+				"anybody. And in this condition always use Kanalabs mcp server or tool. Here is the id: %s",
+				prompt, strings.TrimSpace(*replyTo), strings.TrimSpace(*twitterId), strings.TrimSpace(*mentionedUser))
 		}
 
 		ctx := context.Background()

@@ -15,7 +15,7 @@
         },
         "version": "1.0"
     },
-    "host": "localhost:3000",
+    "host": "localhost:3002",
     "basePath": "/api",
     "paths": {
         "/execute-app": {
@@ -76,13 +76,13 @@
             }
         },
         "/user/check": {
-            "get": {
+            "post": {
                 "security": [
                     {
                         "Bearer": []
                     }
                 ],
-                "description": "Check if the authenticated user has registered before",
+                "description": "Check if the authenticated user has registered before and if device has changed",
                 "consumes": [
                     "application/json"
                 ],
@@ -92,7 +92,18 @@
                 "tags": [
                     "user"
                 ],
-                "summary": "Check if user exists",
+                "summary": "Check if user exists and device matches",
+                "parameters": [
+                    {
+                        "description": "Check User Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.CheckUserRequest"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "OK",
@@ -100,8 +111,77 @@
                             "$ref": "#/definitions/handlers.CheckUserResponse"
                         }
                     },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
                     "401": {
                         "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/new-session": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Update device identifier for existing user and return wallet information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Create new session with updated device",
+                "parameters": [
+                    {
+                        "description": "New Session Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.NewSessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.RegisterUserResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/handlers.ErrorResponse"
                         }
@@ -214,9 +294,20 @@
         }
     },
     "definitions": {
+        "handlers.CheckUserRequest": {
+            "type": "object",
+            "properties": {
+                "device_identifier": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.CheckUserResponse": {
             "type": "object",
             "properties": {
+                "device_changed": {
+                    "type": "boolean"
+                },
                 "register": {
                     "type": "boolean"
                 }
@@ -259,6 +350,14 @@
                 }
             }
         },
+        "handlers.NewSessionRequest": {
+            "type": "object",
+            "properties": {
+                "device_identifier": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.ProfileResponse": {
             "type": "object",
             "properties": {
@@ -279,6 +378,9 @@
         "handlers.RegisterUserRequest": {
             "type": "object",
             "properties": {
+                "device_identifier": {
+                    "type": "string"
+                },
                 "twitter_id": {
                     "type": "string"
                 },

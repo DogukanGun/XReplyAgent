@@ -21,19 +21,30 @@ type User struct {
 	FirebaseID       string `bson:"firebase_id" json:"firebase_id"`
 	TwitterID        string `bson:"twitter_id" json:"twitter_id"`
 	Username         string `bson:"username" json:"username"`
+	DeviceIdentifier string `bson:"device_identifier,omitempty" json:"device_identifier,omitempty"`
 	EthPublicKey     string `bson:"eth_public_key,omitempty" json:"eth_public_key,omitempty"`
 	EthPrivateKey    string `bson:"eth_private_key,omitempty" json:"eth_private_key,omitempty"`
 	SolanaPublicKey  string `bson:"solana_public_key,omitempty" json:"solana_public_key,omitempty"`
 	SolanaPrivateKey string `bson:"solana_private_key,omitempty" json:"solana_private_key,omitempty"`
 }
 
+type CheckUserRequest struct {
+	DeviceIdentifier string `json:"device_identifier"`
+}
+
 type CheckUserResponse struct {
-	Register bool `json:"register"`
+	Register      bool `json:"register"`
+	DeviceChanged bool `json:"device_changed"`
 }
 
 type RegisterUserRequest struct {
-	TwitterID string `json:"twitter_id"`
-	Username  string `json:"username"`
+	TwitterID        string `json:"twitter_id"`
+	Username         string `json:"username"`
+	DeviceIdentifier string `json:"device_identifier"`
+}
+
+type NewSessionRequest struct {
+	DeviceIdentifier string `json:"device_identifier"`
 }
 
 type WalletKeys struct {
