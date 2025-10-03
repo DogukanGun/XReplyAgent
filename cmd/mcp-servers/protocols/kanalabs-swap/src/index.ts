@@ -1,9 +1,9 @@
 #!/usr/bin/env node
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp"
 
-import { startSSEServer } from "./server/sse.ts"
-import { startStdioServer } from "./server/stdio.ts"
-import logger from "./utils/logger.ts"
+import { startSSEServer } from "./server/sse"
+import { startStdioServer } from "./server/stdio"
+import logger from "./utils/logger"
 
 const args = process.argv.slice(2)
 const sseMode = args.includes("--sse") || args.includes("-s")
@@ -22,7 +22,7 @@ async function main() {
   }
 
   const handleShutdown = async () => {
-    await server.close()
+    await server?.close()
     process.exit(0)
   }
   // Handle process termination

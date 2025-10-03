@@ -4,9 +4,9 @@
   "scripts": {
     "start": "node dist/index.js",
     "start:sse": "npm run start --sse",
-    "dev:sse": "bun run --watch src/index.ts --sse",
+    "dev:sse": "npm run build && node dist/index.js --sse",
     "dev": "bun run --watch src/index.ts",
-    "build": "bun build src/*.ts --outdir dist --target node --format cjs",
+    "build": "tsc",
     "test": "npx @modelcontextprotocol/inspector bun dev",
     "e2e": "LOGLEVEL=debug bun test e2e --coverage --timeout 50000",
     "prepare": "husky",
@@ -21,11 +21,13 @@
   "description": "",
   "dependencies": {
     "@aptos-labs/ts-sdk": "^1.23.0",
+    "@injectivelabs/networks": "^1.14.13",
+    "@injectivelabs/ts-types": "^1.14.13",
     "@kanalabs/aggregator": "^0.7.14",
     "@modelcontextprotocol/sdk": "^1.11.0",
     "@mysten/sui": "^1.29.1",
     "@mysten/sui.js": "^0.54.1",
-    "@solana/web3.js": "^1.98.4",
+    "@solana/web3.js": "1.78.4",
     "bs58": "^6.0.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
@@ -34,6 +36,7 @@
     "mime": "^4.0.7",
     "mongodb": "^6.18.0",
     "reflect-metadata": "^0.2.2",
+    "rpc-websockets": "7.5.1",
     "viem": "^2.27.2",
     "zod": "^3.22.4"
   },
@@ -47,6 +50,8 @@
     "@types/node": "^20.0.0",
     "husky": "^9.1.7",
     "prettier": "3.2.4",
+    "ts-node": "^10.9.1",
+    "tsx": "^4.7.1",
     "typescript": "^5.0.0"
   }
 }

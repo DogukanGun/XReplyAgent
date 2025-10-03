@@ -2,8 +2,8 @@ import "dotenv/config"
 
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
 
-import Logger from "../utils/logger.ts"
-import { startServer } from "./base.ts"
+import Logger from "../utils/logger"
+import { startServer } from "./base"
 
 // Start the server
 export const startStdioServer = async () => {

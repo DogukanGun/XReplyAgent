@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 import { Aptos, AptosConfig, Ed25519PrivateKey, HexInput, Network, PrivateKey, PrivateKeyVariants } from "@aptos-labs/ts-sdk";
 import { MongoClient } from "mongodb"
-import { AgentRuntime, createAptosTools, LocalSigner } from "move-agent-kit";
+import { AgentRuntime, createAptosTools, LocalSigner } from "./src";
 import { ChatOpenAI } from "@langchain/openai";
 import { MemorySaver } from "@langchain/langgraph";
 import { createReactAgent } from "@langchain/langgraph/prebuilt"
