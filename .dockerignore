@@ -9,3 +9,5 @@
 *.tgz
 *.zip
 *.tar
+
+**/docs
