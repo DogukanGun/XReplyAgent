@@ -1,10 +1,8 @@
 # Use the official Go image as build stage
 FROM golang:1.23.2-alpine AS builder
 
-# Build arguments for configuration
-ARG SWAGGER_HOST=api.nexarb.com
+# Build arguments for configuration (kept for compatibility, not used for sed anymore)
 ARG ENV=prod
-ARG MONGODB_URI=""
 
 # Set working directory
 WORKDIR /app
@@ -21,9 +19,8 @@ COPY . .
 # Install swag tool for generating swagger docs
 RUN go install github.com/swaggo/swag/cmd/swag@latest
 
-# Generate swagger docs with dynamic host replacement
+# Generate swagger docs (host is set at runtime via env)
 RUN swag init -g ./api/main.go -o ./api/docs
-RUN sed -i "s/localhost:3002/${SWAGGER_HOST}/g" ./api/docs/swagger.json
 
 # Build the application
 RUN CGO_ENABLED=0 GOOS=linux go build -o main ./api
@@ -59,7 +56,7 @@ EXPOSE 3002
 ENV GIN_MODE=release
 ENV ENV=prod
 # MongoDB URI will be set from build arg or runtime
-ENV MONGODB_URI=${MONGODB_URI}
+ENV MONGODB_URI=""
 
 # Run the binary
 CMD ["./main"]

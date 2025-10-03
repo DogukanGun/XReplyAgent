@@ -24,10 +24,11 @@ package main
 import (
 	"context"
 	"fmt"
-	httpSwagger "github.com/swaggo/http-swagger"
 	"log"
 	"net/http"
 	"os"
+
+	httpSwagger "github.com/swaggo/http-swagger"
 
 	firebase "firebase.google.com/go/v4"
 	"github.com/go-chi/chi/v5"
@@ -90,10 +91,10 @@ func main() {
 		r.Post("/execute", handlers.ExecuteAppHandler)
 	})
 
-	// Swagger endpoint
-	swaggerURL := "http://localhost:3002/swagger/doc.json"
-	if os.Getenv("ENV") == "prod" {
-		swaggerURL = "https://api.nexarb.com/swagger/doc.json"
+	// Swagger endpoint (simple: require SWAGGER_URL at runtime)
+	swaggerURL := os.Getenv("SWAGGER_URL")
+	if swaggerURL == "" {
+		log.Fatalf("SWAGGER_URL is required, e.g., http://<host>:3002/swagger/doc.json or https://domain/swagger/doc.json")
 	}
 	r.Get("/swagger/*", httpSwagger.Handler(
 		httpSwagger.URL(swaggerURL),

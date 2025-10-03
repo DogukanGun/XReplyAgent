@@ -213,9 +213,9 @@ func wlDiscoveredTools(wl *mcpHTTP) ([]tools.Tool, error) {
 	return out, nil
 }
 
-// discoveredTools discovers tools exposed by the BNB HTTP MCP proxy server
+// bnbDiscoveredTools discovers tools exposed by the BNB HTTP MCP proxy server
 // and converts them to LangChainGo tools for the agent.
-func discoveredTools(bnb *mcpHTTP) ([]tools.Tool, error) {
+func bnbDiscoveredTools(bnb *mcpHTTP) ([]tools.Tool, error) {
 	raw, err := bnb.listTools()
 	if err != nil {
 		return nil, err
@@ -269,7 +269,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	// goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP") // GoldRush disabled for now
 	walletMcpUrl := os.Getenv("WALLET_MCP_HTTP")
 	bnbHttpURL := os.Getenv("BNB_MCP_HTTP")
-	moveHttpURL := os.Getenv("MOVE_MCP_HTTP")
+	moveHttpURL := os.Getenv("APTOS_MCP_HTTP")
 	if xURL == "" {
 		fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
 		return "", nil
@@ -298,7 +298,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	// Initialize BNB tools: prefer HTTP MCP proxy; fallback to SSE proxy tool
 	var bnbTools []tools.Tool
 	if strings.TrimSpace(bnbHttpURL) != "" {
-		if t, err := discoveredTools(newMCP(bnbHttpURL)); err == nil {
+		if t, err := bnbDiscoveredTools(newMCP(bnbHttpURL)); err == nil {
 			bnbTools = t
 		} else {
 			fmt.Fprintln(os.Stderr, "failed to discover BNB HTTP tools:", err)
@@ -455,7 +455,7 @@ func main() {
 		// Initialize BNB tools: prefer HTTP MCP proxy; fallback to SSE proxy tool
 		var bnbTools []tools.Tool
 		if strings.TrimSpace(bnbHttpURL) != "" {
-			if t, err := discoveredTools(newMCP(bnbHttpURL)); err == nil {
+			if t, err := bnbDiscoveredTools(newMCP(bnbHttpURL)); err == nil {
 				bnbTools = t
 			} else {
 				fmt.Fprintln(os.Stderr, "failed to discover BNB HTTP tools:", err)

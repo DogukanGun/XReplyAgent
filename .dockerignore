@@ -1,0 +1,11 @@
+.git
+**/node_modules
+**/dist
+**/build
+**/.next
+**/.turbo
+**/.cache
+*.log
+*.tgz
+*.zip
+*.tar
