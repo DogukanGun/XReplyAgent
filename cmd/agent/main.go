@@ -141,29 +141,6 @@ func (t xTool) Call(ctx context.Context, input string) (string, error) {
 	return t.client.call("twitter.post_reply", a)
 }
 
-// func cgDiscoveredTools(cg *mcpHTTP) ([]tools.Tool, error) {
-// 	raw, err := cg.listTools()
-// 	if err != nil {
-// 		return nil, err
-// 	}
-// 	out := make([]tools.Tool, 0, len(raw))
-// 	for _, t := range raw {
-// 		name, _ := t["name"].(string)
-// 		if name == "" {
-// 			continue
-// 		}
-// 		description, _ := t["description"].(string)
-// 		// include inputSchema (if any) as a compact JSON to guide the LLM
-// 		// if schemaVal, ok := t["inputSchema"]; ok && schemaVal != nil {
-// 		// 	if b, err := json.Marshal(schemaVal); err == nil {
-// 		// 		description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
-// 		// 	}
-// 		// }
-// 		out = append(out, genericMCPTool{client: cg, name: name, desc: description})
-// 	}
-// 	return out, nil
-// }
-
 // grDiscoveredTools discovers tools exposed by the GoldRush HTTP MCP server and
 // converts them to LangChainGo tools for the agent.
 func grDiscoveredTools(gr *mcpHTTP) ([]tools.Tool, error) {
@@ -244,6 +221,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	// goldrushURL := os.Getenv("GOLDRUSH_MCP_HTTP") // GoldRush disabled for now
 	walletMcpUrl := os.Getenv("WALLET_MCP_HTTP")
 	bnbHttpURL := os.Getenv("BNB_MCP_HTTP")
+	solanaHttpURL := os.Getenv("SOLANA_HTTP_HTTP")
 	if xURL == "" {
 		fmt.Fprintln(os.Stderr, "Set CG_MCP_HTTP (e.g., http://localhost:8082/mcp), X_MCP_HTTP (e.g., http://localhost:8081/mcp), and GOLDRUSH_MCP_HTTP (e.g., http://localhost:8083/mcp)")
 		return "", nil
@@ -263,10 +241,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 		return "", nil
 	}
 
-	// cg disabled to reduce token usage
-	// cg := newMCP(cgURL)
 	x := newMCP(xURL)
-	// gr := newMCP(goldrushURL) // GoldRush disabled
 	wl := newMCP(walletMcpUrl)
 
 	// Initialize BNB tools: prefer HTTP MCP proxy; fallback to SSE proxy tool
@@ -279,14 +254,16 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 		}
 	}
 
-	// cgTools, err := cgDiscoveredTools(cg)
-	// if err != nil {
-	// 	fmt.Fprintln(os.Stderr, "failed to discover CG tools:", err)
-	// }
-	// grTools, err := grDiscoveredTools(gr)
-	// if err != nil {
-	// 	fmt.Fprintln(os.Stderr, "failed to discover GoldRush tools:", err)
-	// }
+	// Initialize Solana tools: prefer HTTP MCP proxy; fallback to SSE proxy tool
+	var solanaTools []tools.Tool
+	if strings.TrimSpace(solanaHttpURL) != "" {
+		if t, err := bnbDiscoveredTools(newMCP(solanaHttpURL)); err == nil {
+			solanaTools = t
+		} else {
+			fmt.Fprintln(os.Stderr, "failed to discover Solana HTTP tools:", err)
+		}
+	}
+
 	wlTools, err := wlDiscoveredTools(wl)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "failed to discover Wallet Mcp tools:", err)
@@ -295,6 +272,7 @@ func askAgentAndGetXMcp(question string, twitterId string) (string, *mcpHTTP) {
 	toolsList := make([]tools.Tool, 0, len(wlTools)+len(bnbTools)+2)
 	toolsList = append(toolsList, xTool{client: x})
 	toolsList = append(toolsList, bnbTools...)
+	toolsList = append(toolsList, solanaTools...)
 	toolsList = append(toolsList, wlTools...)
 	model := os.Getenv("OPENAI_MODEL")
 	if model == "" {

@@ -1,0 +1,49 @@
+{
+  "name": "agent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start:sse": "pnpm run start",
+    "dev:sse": "pnpm run dev",
+    "prepare": "husky",
+    "format": "prettier --write agent"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.12.4",
+  "dependencies": {
+    "@langchain/core": "^0.3.44",
+    "@langchain/langgraph": "^0.2.63",
+    "@langchain/openai": "^0.5.5",
+    "@modelcontextprotocol/sdk": "^1.11.0",
+    "@openai/agents": "^0.0.7",
+    "@solana-agent-kit/plugin-blinks": "^2.0.5",
+    "@solana-agent-kit/plugin-defi": "^2.0.8",
+    "@solana-agent-kit/plugin-misc": "^2.0.6",
+    "@solana-agent-kit/plugin-nft": "^2.0.7",
+    "@solana-agent-kit/plugin-token": "^2.0.9",
+    "@solana/web3.js": "^1.98.4",
+    "bs58": "^6.0.0",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.3",
+    "express": "^5.1.0",
+    "mongodb": "^6.20.0",
+    "openai": "^5.3.0",
+    "sdk": "link:@modelcontextprotocol/sdk",
+    "solana-agent-kit": "^2.0.10",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^24.6.2",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.9.3"
+  }
+}

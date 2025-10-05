@@ -7,6 +7,11 @@ Automated X/Twitter mention responder powered by MCP servers and a LangChain age
 - **Tool-orchestration**: Use multiple MCP servers (BNB, Wallet, CoinGecko, GoldRush) via an agent.
 - **Hands-free posting**: Reply under the original tweet through an X MCP.
 
+### Solana Agent Kit Run
+Please go to folder cmd/mcp-servers/protocols/solana/agent and first run `pnpm install` and then build the project with `pnpm run build`. After a successful build, a build folder in same folder hierarchy must appear. Then please run ` pnpm run start:sse`. Now you will see mpc server is on with sse mode.
+
+*Side note: Please do not forget copy .env.example and fill it with your data* 
+
 ### BNB Chain hackathon focus 🟡
 We customized and integrated a BNB Chain MCP to deliver a social, X-native wallet experience:
 - **BNB MCP (customized SSE)**: We tweaked the BNB MCP server to expose rich EVM + Greenfield tools over SSE for real-time, robust operations on BSC/opBNB/Greenfield.
@@ -244,12 +249,13 @@ curl -s -X POST http://localhost:8080/mentions \
 - `X_MCP_HTTP` (e.g., `http://localhost:8081/mcp`)
 - `GOLDRUSH_MCP_HTTP` (e.g., `http://localhost:8083/mcp`)
 - `BNB_AGENT_MCP_SSE` (e.g., `http://localhost:3002/sse`)
+- `SOLANA_AGENT_MCP_SSE` (e.g., `http://localhost:3002/sse`)
 - `WALLET_MCP_HTTP` (e.g., `http://localhost:8084/mcp`)
 - `OPENAI_API_KEY`, `OPENAI_MODEL` (default `gpt-4o-mini-2024-07-18`)
 - Flags: `-q`, `-reply-to`, `-ti`
 
 ### Bot
-- `AGENT_CMD`, `AGENT_CG_MCP_HTTP`, `AGENT_X_MCP_HTTP`, `AGENT_GOLDRUSH_MCP_HTTP`, `AGENT_BNB_AGENT_MCP_SSE`, `AGENT_WALLET_MCP_HTTP`, `OPENAI_API_KEY`
+- `AGENT_CMD`, `AGENT_CG_MCP_HTTP`, `AGENT_X_MCP_HTTP`, `AGENT_GOLDRUSH_MCP_HTTP`, `AGENT_BNB_AGENT_MCP_SSE`, `AGENT_SOLANA_MCP_HTTP`, `AGENT_WALLET_MCP_HTTP`, `OPENAI_API_KEY`
 - `WEBHOOK_SECRET` (optional), `PORT` (default 8080)
 
 ---
