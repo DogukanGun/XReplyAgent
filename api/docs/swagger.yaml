@@ -1,0 +1,288 @@
+basePath: /api
+definitions:
+  handlers.CheckUserRequest:
+    properties:
+      device_identifier:
+        type: string
+    type: object
+  handlers.CheckUserResponse:
+    properties:
+      device_changed:
+        type: boolean
+      register:
+        type: boolean
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  handlers.ExecuteAppRequest:
+    properties:
+      app_name:
+        type: string
+      params:
+        additionalProperties: true
+        type: object
+    type: object
+  handlers.ExecuteAppResponse:
+    properties:
+      app_name:
+        type: string
+      message:
+        type: string
+      status:
+        type: string
+      uid:
+        type: string
+    type: object
+  handlers.NewSessionRequest:
+    properties:
+      device_identifier:
+        type: string
+    type: object
+  handlers.ProfileResponse:
+    properties:
+      message:
+        type: string
+      twitter_id:
+        type: string
+      uid:
+        type: string
+      username:
+        type: string
+    type: object
+  handlers.RegisterUserRequest:
+    properties:
+      device_identifier:
+        type: string
+      twitter_id:
+        type: string
+      username:
+        type: string
+    type: object
+  handlers.RegisterUserResponse:
+    properties:
+      message:
+        type: string
+      private_key:
+        description: Backward compatibility
+        type: string
+      twitter_id:
+        type: string
+      uid:
+        type: string
+      username:
+        type: string
+      wallets:
+        $ref: '#/definitions/handlers.WalletKeys'
+    type: object
+  handlers.WalletKeyPair:
+    properties:
+      private_key:
+        type: string
+      public_address:
+        type: string
+    type: object
+  handlers.WalletKeys:
+    properties:
+      eth_wallet:
+        $ref: '#/definitions/handlers.WalletKeyPair'
+      solana_wallet:
+        $ref: '#/definitions/handlers.WalletKeyPair'
+    type: object
+host: localhost:3002
+info:
+  contact:
+    email: support@swagger.io
+    name: API Support
+    url: http://www.swagger.io/support
+  description: API for XReplyAgent with Firebase authentication
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: http://swagger.io/terms/
+  title: XReplyAgent API
+  version: "1.0"
+paths:
+  /execute-app:
+    post:
+      consumes:
+      - application/json
+      description: Execute an application with optional parameters
+      parameters:
+      - description: Execute App Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.ExecuteAppRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ExecuteAppResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Execute an application
+      tags:
+      - apps
+  /user/check:
+    post:
+      consumes:
+      - application/json
+      description: Check if the authenticated user has registered before and if device
+        has changed
+      parameters:
+      - description: Check User Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.CheckUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.CheckUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Check if user exists and device matches
+      tags:
+      - user
+  /user/new-session:
+    post:
+      consumes:
+      - application/json
+      description: Update device identifier for existing user and return wallet information
+      parameters:
+      - description: New Session Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.NewSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.RegisterUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Create new session with updated device
+      tags:
+      - user
+  /user/profile:
+    get:
+      consumes:
+      - application/json
+      description: Get the authenticated user's profile information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.ProfileResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Get user profile
+      tags:
+      - user
+  /user/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user with Twitter ID and username
+      parameters:
+      - description: Register User Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.RegisterUserRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.RegisterUserResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Register new user
+      tags:
+      - user
+securityDefinitions:
+  Bearer:
+    description: Type "Bearer" followed by a space and JWT token.
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"

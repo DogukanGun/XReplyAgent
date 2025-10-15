@@ -1,11 +1,9 @@
 package functions
 
 import (
-	"cg-mentions-bot/internal/utils/db"
+	"cg-mentions-bot/internal/services"
 	"context"
-	"encoding/hex"
 	"fmt"
-	"github.com/ethereum/go-ethereum/crypto"
 	"github.com/mark3labs/mcp-go/mcp"
 )
 
@@ -15,27 +13,15 @@ func (wf *WalletFunctions) CreateWallet() (string, error) {
 	if err == nil && pk != "" {
 		return pk, nil
 	}
-	mg := db.MongoDB{
-		Database:   "User",
-		Collection: "Wallet",
-	}
-	//If user is not exist, create one
-	privateKey, err := crypto.GenerateKey()
+
+	// Use the common wallet service
+	walletService := services.NewWalletService(wf.MongoConnection)
+	walletKeys, err := walletService.CreateOrGetWallet(wf.TwitterId)
 	if err != nil {
-		return "", fmt.Errorf("failed to generate wallet: %w", err)
+		return "", fmt.Errorf("failed to create/get wallets: %w", err)
 	}
-	publicAddress := crypto.PubkeyToAddress(privateKey.PublicKey).Hex()
-	privateKeyHex := hex.EncodeToString(crypto.FromECDSA(privateKey))
-	user := User{
-		PublicKey:  publicAddress,
-		PrivateKey: privateKeyHex,
-		TwitterId:  wf.TwitterId,
-	}
-	ack := mg.Insert(wf.MongoConnection, user)
-	if !ack {
-		return "", fmt.Errorf("failed to insert wallet")
-	}
-	return publicAddress, nil
+
+	return walletKeys.EthWallet.PublicAddress, nil
 }
 
 func (wf *WalletFunctions) GenerateCreateWalletTool() (mcp.Tool, func(ctx context.Context, request mcp.CallToolRequest) (*mcp.CallToolResult, error)) {

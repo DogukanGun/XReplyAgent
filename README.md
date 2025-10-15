@@ -150,13 +150,20 @@ The BNB MCP server provides comprehensive blockchain tools for BSC, opBNB, Green
 - NFT operations
 - Greenfield storage operations
 
-### 5) Start Wallet MCP Server 💳
+### 5) BNB MCP HTTP Proxy (forward SSE -> HTTP MCP) 🟡
+```bash
+go build -o bnbproxy ./cmd/mcp-servers/protocols/bnb/bnbproxy
+BNB_MCP_SSE="http://localhost:3001/sse" PORT=8084 ./bnbproxy
+```
+This exposes HTTP MCP at `http://localhost:8084/mcp` forwarding to the SSE server.
+
+### 8) Start Wallet MCP Server 💳
 ```bash
 go build -o wallet ./cmd/mcp-servers/wallet
 export BNB_RPC_="https://bnb-mainnet.g.alchemy.com/v2/"
 export BNB_RPC="https://bnb-testnet.g.alchemy.com/v2/"
 export MONGODB_URI="mongodb://localhost:27017"  # Your MongoDB connection string
-PORT=8084 ./wallet
+PORT=8085 ./wallet
 ```
 The Wallet MCP server provides secure wallet operations including:
 - Wallet creation and management
@@ -165,7 +172,7 @@ The Wallet MCP server provides secure wallet operations including:
 - Asset transfers
 - Integration with user Twitter IDs for personalized wallet operations
 
-### 6) Run bot in Agent mode (recommended) 🤖
+### 9) Run bot in Agent mode (recommended) 🤖
 ```bash
 go build -o agent ./cmd/agent
 go build -o bot ./cmd/bot
@@ -174,20 +181,9 @@ export AGENT_CG_MCP_HTTP="http://localhost:8082/mcp"
 export AGENT_X_MCP_HTTP="http://localhost:8081/mcp"
 export AGENT_GOLDRUSH_MCP_HTTP="http://localhost:8083/mcp"
 export OPENAI_API_KEY="<your_openai_key>"
-export AGENT_BNB_AGENT_MCP_SSE="http://localhost:3001/sse"
-export AGENT_WALLET_MCP_HTTP="http://localhost:8084/mcp"
+export AGENT_BNB_MCP_HTTP="http://localhost:8084/mcp"
+export AGENT_WALLET_MCP_HTTP="http://localhost:8085/mcp"
 PORT=8080 ./bot
-```
-
-### 5) Test a mention 📬
-```bash
-curl -s -X POST http://localhost:8080/mentions \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "count":1,
-    "mentions":[{"tweet_id":"1958197635065463114","text":"what’s the price of $HLP on Hyperliquid right now?","author_id":"123","author_username":"alice","conversation_id":"1956374656836907309","created_at":"2025-08-15T10:00:00.000Z"}],
-    "meta":{}
-  }'
 ```
 
 Side note: If the bnb mcp server is wanted to test, please put a test author id that is from db and the related wallet should have test tokens.
@@ -249,7 +245,7 @@ curl -s -X POST http://localhost:8080/mentions \
 - `GOLDRUSH_MCP_HTTP` (e.g., `http://localhost:8083/mcp`)
 - `BNB_AGENT_MCP_SSE` (e.g., `http://localhost:3002/sse`)
 - `WALLET_MCP_HTTP` (e.g., `http://localhost:8084/mcp`)
-- `OPENAI_API_KEY`, `OPENAI_MODEL` (default `gpt-4.1-mini`)
+- `OPENAI_API_KEY`, `OPENAI_MODEL` (default `gpt-4o-mini-2024-07-18`)
 - Flags: `-q`, `-reply-to`, `-ti`
 
 ### Bot

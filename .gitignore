@@ -177,3 +177,6 @@ dist
 .cursor/
 
 node_modules/
+
+# Database data and logs
+data/
