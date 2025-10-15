@@ -50,9 +50,6 @@ func NewRunner(agentCmd string) Runner {
 		if v := os.Getenv("OPENAI_MODEL"); v != "" {
 			env = append(env, fmt.Sprintf("OPENAI_MODEL=%s", v))
 		}
-		if v := os.Getenv("APTOS_MCP_HTTP"); v != "" {
-			env = append(env, fmt.Sprintf("APTOS_MCP_HTTP=%s", v))
-		}
 		cmd.Env = env
 		var outBuf, errBuf bytes.Buffer
 		cmd.Stdout = &outBuf

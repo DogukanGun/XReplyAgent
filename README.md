@@ -157,20 +157,6 @@ BNB_MCP_SSE="http://localhost:3001/sse" PORT=8084 ./bnbproxy
 ```
 This exposes HTTP MCP at `http://localhost:8084/mcp` forwarding to the SSE server.
 
-### 6) Start Move (Aptos) MCP Server 🔷
-Streamable HTTP (recommended):
-```bash
-cd cmd/mcp-servers/protocols/move/agent
-npm install
-npm run dev # starts streamable HTTP at http://localhost:3010/mcp
-```
-### 7) MOVE MCP HTTP Proxy (forward SSE -> HTTP MCP) 🟡
-```bash
-go build -o moveproxy ./cmd/mcp-servers/protocols/move
-MOVE_MCP_SSE="http://localhost:3003/sse" PORT=8086 ./moveproxy
-```
-This exposes HTTP MCP at `http://localhost:8086/mcp` forwarding to the SSE server.
-
 ### 8) Start Wallet MCP Server 💳
 ```bash
 go build -o wallet ./cmd/mcp-servers/wallet
@@ -197,7 +183,6 @@ export AGENT_GOLDRUSH_MCP_HTTP="http://localhost:8083/mcp"
 export OPENAI_API_KEY="<your_openai_key>"
 export AGENT_BNB_MCP_HTTP="http://localhost:8084/mcp"
 export AGENT_WALLET_MCP_HTTP="http://localhost:8085/mcp"
-export AGENT_APTOS_MCP_HTTP="http://localhost:8086/mcp"
 PORT=8080 ./bot
 ```
 
