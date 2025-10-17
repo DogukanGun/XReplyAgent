@@ -5,11 +5,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"github.com/mark3labs/mcp-go/mcp"
-	"go.mongodb.org/mongo-driver/v2/bson"
 	"math/big"
 	"os"
 	_ "strconv"
+
+	"github.com/mark3labs/mcp-go/mcp"
+	"go.mongodb.org/mongo-driver/v2/bson"
 
 	"github.com/ethereum/go-ethereum"
 	"github.com/ethereum/go-ethereum/common"
@@ -22,15 +23,19 @@ func (wf *WalletFunctions) SignTransaction(chainId string, toAddr string, data [
 	ctx := context.Background()
 
 	mg := db.MongoDB{
-		Database:   "User",
-		Collection: "Wallet",
+		Database:   "xreplyagent",
+		Collection: "users",
 	}
 	var user []User
 	ack := mg.Read(wf.MongoConnection, bson.D{{Key: "twitter_id", Value: wf.TwitterId}}, &user)
 	if !ack {
 		return "", errors.New("failed to find user")
 	}
-	privKeyHex := user[0].PrivateKey
+	// Prefer new eth_private_key if present; fallback to legacy private_key
+	privKeyHex := user[0].EthPrivateKey
+	if privKeyHex == "" {
+		privKeyHex = user[0].PrivateKey
+	}
 	privateKey, err := crypto.HexToECDSA(privKeyHex)
 	if err != nil {
 		return "", fmt.Errorf("invalid private key: %w", err)

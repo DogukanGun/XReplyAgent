@@ -13,7 +13,7 @@ type Runner func(ctx context.Context, question string, replyTo string, twitterId
 
 // NewRunner constructs a Runner for the given agent command. It inherits the current
 // process environment and optionally overrides common agent envs if set:
-//   - AGENT_CG_MCP_HTTP, AGENT_X_MCP_HTTP, OPENAI_API_KEY, OPENAI_MODEL
+//   - AGENT_CG_MCP_HTTP, X_MCP_HTTP, OPENAI_API_KEY, OPENAI_MODEL
 func NewRunner(agentCmd string) Runner {
 	return func(ctx context.Context, question string, replyTo string, twitterId string, mentionedPeople []string) (string, error) {
 		args := []string{"-q", question, "-ti", twitterId}
@@ -29,7 +29,7 @@ func NewRunner(agentCmd string) Runner {
 		if v := os.Getenv("AGENT_CG_MCP_HTTP"); v != "" {
 			env = append(env, fmt.Sprintf("CG_MCP_HTTP=%s", v))
 		}
-		if v := os.Getenv("AGENT_X_MCP_HTTP"); v != "" {
+		if v := os.Getenv("X_MCP_HTTP"); v != "" {
 			env = append(env, fmt.Sprintf("X_MCP_HTTP=%s", v))
 		}
 		if v := os.Getenv("AGENT_GOLDRUSH_MCP_HTTP"); v != "" {
@@ -38,10 +38,13 @@ func NewRunner(agentCmd string) Runner {
 		if v := os.Getenv("AGENT_BNB_AGENT_MCP_SSE"); v != "" {
 			env = append(env, fmt.Sprintf("BNB_AGENT_MCP_SSE=%s", v))
 		}
-		if v := os.Getenv("AGENT_BNB_MCP_HTTP"); v != "" {
+		if v := os.Getenv("BNB_MCP_HTTP"); v != "" {
 			env = append(env, fmt.Sprintf("BNB_MCP_HTTP=%s", v))
 		}
-		if v := os.Getenv("AGENT_WALLET_MCP_HTTP"); v != "" {
+		if v := os.Getenv("AGENT_SOLANA_MCP_HTTP"); v != "" {
+			env = append(env, fmt.Sprintf("SOLANA_MCP_HTTP=%s", v))
+		}
+		if v := os.Getenv("WALLET_MCP_HTTP"); v != "" {
 			env = append(env, fmt.Sprintf("WALLET_MCP_HTTP=%s", v))
 		}
 		if v := os.Getenv("OPENAI_API_KEY"); v != "" {

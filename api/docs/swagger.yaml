@@ -1,5 +1,21 @@
 basePath: /api
 definitions:
+  handlers.AgentAskRequest:
+    properties:
+      input:
+        type: string
+      mentioned_ids:
+        items:
+          type: string
+        type: array
+      reply_to:
+        type: string
+    type: object
+  handlers.AgentAskResponse:
+    properties:
+      output:
+        type: string
+    type: object
   handlers.CheckUserRequest:
     properties:
       device_identifier:
@@ -105,6 +121,39 @@ info:
   title: XReplyAgent API
   version: "1.0"
 paths:
+  /agent/ask:
+    post:
+      consumes:
+      - application/json
+      description: Invoke the agent with input, twitter_id (derived), optional reply_to
+        and mentioned users
+      parameters:
+      - description: Agent Ask Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.AgentAskRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.AgentAskResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      security:
+      - Bearer: []
+      summary: Ask the agent
+      tags:
+      - agent
   /execute-app:
     post:
       consumes:
