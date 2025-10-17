@@ -5,6 +5,7 @@ import (
 	"cg-mentions-bot/internal/utils/wallet"
 	"context"
 	"fmt"
+
 	"go.mongodb.org/mongo-driver/v2/bson"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
@@ -44,8 +45,8 @@ func (ws *WalletService) CreateOrGetWallet(twitterID string) (*wallet.WalletKeys
 
 	// Save to database
 	mg := db.MongoDB{
-		Database:   "User",
-		Collection: "Wallet",
+		Database:   "xreplyagent",
+		Collection: "users",
 	}
 
 	user := WalletUser{
@@ -67,8 +68,8 @@ func (ws *WalletService) CreateOrGetWallet(twitterID string) (*wallet.WalletKeys
 // GetWallet retrieves existing wallet for a Twitter ID
 func (ws *WalletService) GetWallet(twitterID string) (*wallet.WalletKeys, error) {
 	mg := db.MongoDB{
-		Database:   "User",
-		Collection: "Wallet",
+		Database:   "xreplyagent",
+		Collection: "users",
 	}
 
 	collection := ws.mongoClient.Database(mg.Database).Collection(mg.Collection)

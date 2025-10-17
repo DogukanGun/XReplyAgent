@@ -3,12 +3,12 @@ package functions
 import (
 	"context"
 	"fmt"
-	"github.com/ethereum/go-ethereum/common"
-	_ "github.com/ethereum/go-ethereum/common"
-	"github.com/ethereum/go-ethereum/ethclient"
-	"github.com/mark3labs/mcp-go/mcp"
 	"math/big"
 	"os"
+
+	"github.com/ethereum/go-ethereum/common"
+	"github.com/ethereum/go-ethereum/ethclient"
+	"github.com/mark3labs/mcp-go/mcp"
 )
 
 func (wf *WalletFunctions) GetWalletBalance() (*big.Int, error) {

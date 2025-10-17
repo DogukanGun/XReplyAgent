@@ -30,13 +30,15 @@ export function withTwitterAuth<P extends Record<string, any> & { twitter_id?: s
 async function getUserByTwitterId(twitterId: string) : Promise<{ twitter_id: string, public_key: string, private_key: string } | null> {
     try {
       const client = await getMongoClient()
-      const db = client.db("User")
-      const collection = db.collection("Wallet")
+  const db = client.db("xreplyagent")
+  const collection = db.collection("users")
   
       const user = await collection.findOne<{ 
         twitter_id: string; 
-        public_key: string; 
-        private_key: string; 
+        eth_public_key?: string; 
+        eth_private_key?: string; 
+        solana_public_key?: string;
+        solana_private_key?: string;
         username?: string 
       }>({ twitter_id: twitterId })
   
@@ -46,8 +48,8 @@ async function getUserByTwitterId(twitterId: string) : Promise<{ twitter_id: str
   
       return {
         twitter_id: user.twitter_id,
-        public_key: user.public_key,
-        private_key: user.private_key,
+        public_key: user.eth_public_key ?? user.solana_public_key ?? "",
+        private_key: user.eth_private_key ?? user.solana_private_key ?? "",
       }
     } catch (error) {
       Logger.error("Error fetching user by twitter_id:", error)

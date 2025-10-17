@@ -5,19 +5,30 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/mark3labs/mcp-go/mcp"
 	"go.mongodb.org/mongo-driver/v2/bson"
 )
 
 func (wf *WalletFunctions) ReadUserWallet() (string, error) {
 	mg := db.MongoDB{
-		Database:   "User",
-		Collection: "Wallet",
+		Database:   "xreplyagent",
+		Collection: "users",
 	}
 	var user []User
 	ack := mg.Read(wf.MongoConnection, bson.D{{Key: "twitter_id", Value: wf.TwitterId}}, &user)
 	if ack && len(user) > 0 {
-		return user[0].PublicKey, nil
+		// Prefer new EVM public key; fallback to legacy public_key if present
+		if user[0].EthPublicKey != "" {
+			return user[0].EthPublicKey, nil
+		}
+		if user[0].PublicKey != "" {
+			return user[0].PublicKey, nil
+		}
+		// As a last resort, return solana public key if EVM not set
+		if user[0].SolanaPublicKey != "" {
+			return user[0].SolanaPublicKey, nil
+		}
 	}
 	return "", errors.New("user not found")
 }

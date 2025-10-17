@@ -44,10 +44,6 @@ export async function startServer() {
                     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
                 })
                     .use(TokenPlugin)
-                    .use(NFTPlugin)
-                    .use(DefiPlugin)
-                    .use(MiscPlugin)
-                    .use(BlinksPlugin);
                 const tools = createLangchainTools(agent, agent.actions);
                 const memory = new MemorySaver();
                 const llm = new ChatOpenAI({

@@ -55,7 +55,7 @@ func main() {
 	}
 
 	// Initialize MongoDB connection
-	mongoURI := os.Getenv("MONGODB_URI")
+	mongoURI := os.Getenv("MONGO_URI")
 	if mongoURI == "" {
 		mongoURI = "mongodb://localhost:27017" // Default for local development
 	}
@@ -89,6 +89,7 @@ func main() {
 			r.Get("/profile", handlers.GetProfileHandler)
 		})
 		r.Post("/execute", handlers.ExecuteAppHandler)
+		r.Post("/agent/ask", handlers.AgentAskHandler)
 	})
 
 	// Swagger endpoint (simple: require SWAGGER_URL at runtime)

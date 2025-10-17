@@ -10,7 +10,6 @@
     "test": "echo \"Error: no test specified\" && exit 1",
     "start:sse": "pnpm run start",
     "dev:sse": "pnpm run dev",
-    "prepare": "husky",
     "format": "prettier --write agent"
   },
   "keywords": [],
