@@ -1,0 +1,143 @@
+version: "3.9"
+
+services:
+
+  xmcp:
+    image: golang:1.23-alpine
+    container_name: xreply-xmcp
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - PORT=8081
+      - PATH=/usr/local/go/bin:/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+      - X_BEARER_TOKEN=${X_BEARER_TOKEN}
+      - X_AUTH_MODE=${X_AUTH_MODE}
+      - X_CONSUMER_KEY=${X_CONSUMER_KEY}
+      - X_CONSUMER_SECRET=${X_CONSUMER_SECRET}
+      - X_ACCESS_TOKEN=${X_ACCESS_TOKEN}
+      - X_ACCESS_SECRET=${X_ACCESS_SECRET}
+    command: /bin/sh -c "apk add --no-cache git ca-certificates && /usr/local/go/bin/go run ./cmd/mcp-servers/general/coingecko/xmcp"
+    ports:
+      - "8081:8081"
+    restart: unless-stopped
+
+
+  bnb-sse:
+    image: node:20-alpine
+    container_name: xreply-bnb-sse
+    working_dir: /app/cmd/mcp-servers/protocols/bnb/bnbchain-mcp
+    volumes:
+      - .:/app
+    environment:
+      - PORT=3001
+    command: /bin/sh -c "npm ci && npm run dev:sse"
+    expose:
+      - "3001"
+    restart: unless-stopped
+
+  bnbproxy:
+    image: golang:1.23-alpine
+    container_name: xreply-bnbproxy
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - PORT=8084
+      - BNB_MCP_SSE=http://bnb-sse:3001/sse
+      - PATH=/usr/local/go/bin:/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    command: /bin/sh -c "apk add --no-cache git ca-certificates && /usr/local/go/bin/go run ./cmd/mcp-servers/protocols/bnb/bnbproxy"
+    ports:
+      - "8084:8084"
+    depends_on:
+      - bnb-sse
+    restart: unless-stopped
+
+  wallet:
+    image: golang:1.23-alpine
+    container_name: xreply-wallet
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - PORT=8085
+      - MONGO_URI=${MONGO_URI}
+      - BNB_RPC_=${BNB_RPC_}
+      - BNB_RPC=${BNB_RPC}
+      - PATH=/usr/local/go/bin:/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    command: /bin/sh -c "apk add --no-cache git ca-certificates && /usr/local/go/bin/go run ./cmd/mcp-servers/wallet"
+    ports:
+      - "8085:8085"
+    restart: unless-stopped
+
+  solana-sse:
+    image: node:20-alpine
+    container_name: xreply-solana-sse
+    working_dir: /app/cmd/mcp-servers/protocols/solana/agent
+    volumes:
+      - .:/app
+    environment:
+      - PORT=3000
+      - RPC_URL=${SOLANA_RPC_URL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - MONGO_URI=${MONGO_URI}
+    command: /bin/sh -c "corepack enable && pnpm install --frozen-lockfile && pnpm run build && pnpm run start:sse"
+    expose:
+      - "3000"
+    restart: unless-stopped
+
+  solanaproxy:
+    image: golang:1.23-alpine
+    container_name: xreply-solanaproxy
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - PORT=8087
+      - SOLANA_MCP_SSE=http://solana-sse:3000/sse
+      - PATH=/usr/local/go/bin:/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    command: /bin/sh -c "apk add --no-cache git ca-certificates && /usr/local/go/bin/go run ./cmd/mcp-servers/protocols/solana/solanaproxy"
+    ports:
+      - "8087:8087"
+    depends_on:
+      - solana-sse
+    restart: unless-stopped
+
+  agent-builder:
+    image: golang:1.23-alpine
+    container_name: xreply-agent-builder
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - PATH=/usr/local/go/bin:/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    command: /bin/sh -c "apk add --no-cache git ca-certificates && /usr/local/go/bin/go build -o /app/agent ./cmd/agent && sleep infinity"
+    restart: unless-stopped
+
+  bot:
+    image: golang:1.23-alpine
+    container_name: xreply-bot
+    working_dir: /app
+    volumes:
+      - .:/app
+    environment:
+      - PORT=8080
+      - OPENAI_MODEL=${OPENAI_MODEL}
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - X_MCP_HTTP=http://xmcp:8081/mcp
+      - BNB_MCP_HTTP=http://bnbproxy:8084/mcp
+      - WALLET_MCP_HTTP=http://wallet:8085/mcp
+      - SOLANA_MCP_HTTP=http://solanaproxy:8087/mcp
+      - AGENT_CMD=/app/agent
+      - PATH=/usr/local/go/bin:/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+    command: /bin/sh -c "apk add --no-cache git ca-certificates && [ -f /app/agent ] || /usr/local/go/bin/go build -o /app/agent ./cmd/agent; /usr/local/go/bin/go run ./cmd/bot"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - xmcp
+      - bnbproxy
+      - wallet
+      - solanaproxy
+    restart: unless-stopped
+
+

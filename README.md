@@ -162,6 +162,28 @@ BNB_MCP_SSE="http://localhost:3001/sse" PORT=8084 ./bnbproxy
 ```
 This exposes HTTP MCP at `http://localhost:8084/mcp` forwarding to the SSE server.
 
+### 6) Start Solana MCP Server (SSE) 🔷
+```bash
+cd cmd/mcp-servers/protocols/solana/agent
+pnpm install
+pnpm run build
+
+export PORT=3000
+# choose one RPC (mainnet or testnet)
+export RPC_URL="https://api.mainnet-beta.solana.com"
+# export RPC_URL="https://api.testnet.solana.com"
+export OPENAI_API_KEY="<your_openai_key>"
+export MONGO_URI="mongodb://localhost:27017"
+pnpm run start:sse
+```
+
+### 7) Solana MCP HTTP Proxy (forward SSE -> HTTP MCP) 🔷
+```bash
+go build -o solanaproxy ./cmd/mcp-servers/protocols/solana/solanaproxy
+SOLANA_MCP_SSE="http://localhost:3000/sse" PORT=8087 ./solanaproxy
+```
+This exposes HTTP MCP at `http://localhost:8087/mcp` forwarding to the SSE server.
+
 ### 8) Start Wallet MCP Server 💳
 ```bash
 go build -o wallet ./cmd/mcp-servers/wallet
@@ -187,8 +209,8 @@ export X_MCP_HTTP="http://localhost:8081/mcp"
 export AGENT_GOLDRUSH_MCP_HTTP="http://localhost:8083/mcp"
 export OPENAI_API_KEY="<your_openai_key>"
 export BNB_MCP_HTTP="http://localhost:8084/mcp"
-export AGENT_SOLANA_AGENT_MCP_SSE="http://localhost:3000/sse"
 export WALLET_MCP_HTTP="http://localhost:8085/mcp"
+export SOLANA_MCP_HTTP="http://localhost:8087/mcp"
 PORT=8080 ./bot
 ```
 
@@ -300,6 +322,41 @@ kill <PID>            # or: pkill -f xmcp
 
 ### Remove tool chatter from replies
 - The agent sanitizes its final answer to remove lines like `Action:` / `Observation:`; update to latest build if you still see them.
+
+---
+
+## One-command run with Docker Compose 🐳
+
+If you prefer a single command for all services (good for local and EC2):
+
+1) Create a `.env` file at repo root (example):
+```env
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+X_BEARER_TOKEN=...
+MONGO_URI=mongodb://mongo:27017
+SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+BNB_RPC_=https://bnb-mainnet.g.alchemy.com/v2/<key>
+BNB_RPC=https://bnb-testnet.g.alchemy.com/v2/<key>
+```
+
+2) Start everything:
+```bash
+docker compose --env-file .env up -d
+```
+
+3) Check logs:
+```bash
+docker compose logs -f bot
+```
+
+Exposed ports (host):
+- X MCP: 8081, CG Proxy: 8082, GoldRush: 8083, BNB Proxy: 8084, Wallet: 8085, Solana Proxy: 8087, Bot: 8080
+
+Stop and clean:
+```bash
+docker compose down
+```
 
 ---
 
