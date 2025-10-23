@@ -24,14 +24,16 @@ services:
 
 
   bnb-sse:
-    image: node:20-alpine
+    image: oven/bun:1.1-alpine
     container_name: xreply-bnb-sse
     working_dir: /app/cmd/mcp-servers/protocols/bnb/bnbchain-mcp
+    user: "0"
     volumes:
       - .:/app
     environment:
       - PORT=3001
-    command: /bin/sh -c "npm ci && npm run dev:sse"
+      - MONGO_URI=${MONGO_URI}
+    command: /bin/sh -c "cd /app/cmd/mcp-servers/protocols/bnb/bnbchain-mcp && rm -rf node_modules bun.lockb && bun -v && bun install && bun add cors && bun run --watch src/index.ts --sse"
     expose:
       - "3001"
     restart: unless-stopped
@@ -139,5 +141,3 @@ services:
       - wallet
       - solanaproxy
     restart: unless-stopped
-
-
