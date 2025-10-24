@@ -108,3 +108,24 @@ services:
       - wallet
       - solanaproxy
     restart: unless-stopped
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Dockerfile
+    container_name: xreply-api
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - OPENAI_MODEL=${OPENAI_MODEL}
+      - MONGO_URI=${MONGO_URI}
+      - X_MCP_HTTP=http://xmcp:8081/mcp
+      - WALLET_MCP_HTTP=http://wallet:8085/mcp
+      - SOLANA_MCP_HTTP=http://solanaproxy:8087/mcp
+      - SWAGGER_URL=${SWAGGER_URL}
+    ports:
+      - "3002:3002"
+    depends_on:
+      - xmcp
+      - wallet
+      - solanaproxy
+    restart: unless-stopped
