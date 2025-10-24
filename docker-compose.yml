@@ -23,37 +23,6 @@ services:
     restart: unless-stopped
 
 
-  bnb-sse:
-    image: oven/bun:1.1-alpine
-    container_name: xreply-bnb-sse
-    working_dir: /app/cmd/mcp-servers/protocols/bnb/bnbchain-mcp
-    user: "0"
-    volumes:
-      - .:/app
-    environment:
-      - PORT=3001
-      - MONGO_URI=${MONGO_URI}
-    command: /bin/sh -c "cd /app/cmd/mcp-servers/protocols/bnb/bnbchain-mcp && rm -rf node_modules bun.lockb && bun -v && bun install && bun add cors && bun run --watch src/index.ts --sse"
-    expose:
-      - "3001"
-    restart: unless-stopped
-
-  bnbproxy:
-    image: golang:1.23-alpine
-    container_name: xreply-bnbproxy
-    working_dir: /app
-    volumes:
-      - .:/app
-    environment:
-      - PORT=8084
-      - BNB_MCP_SSE=http://bnb-sse:3001/sse
-      - PATH=/usr/local/go/bin:/go/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
-    command: /bin/sh -c "apk add --no-cache git ca-certificates && /usr/local/go/bin/go run ./cmd/mcp-servers/protocols/bnb/bnbproxy"
-    ports:
-      - "8084:8084"
-    depends_on:
-      - bnb-sse
-    restart: unless-stopped
 
   wallet:
     image: golang:1.23-alpine
@@ -127,7 +96,6 @@ services:
       - OPENAI_MODEL=${OPENAI_MODEL}
       - OPENAI_API_KEY=${OPENAI_API_KEY}
       - X_MCP_HTTP=http://xmcp:8081/mcp
-      - BNB_MCP_HTTP=http://bnbproxy:8084/mcp
       - WALLET_MCP_HTTP=http://wallet:8085/mcp
       - SOLANA_MCP_HTTP=http://solanaproxy:8087/mcp
       - AGENT_CMD=/app/agent
@@ -137,7 +105,6 @@ services:
       - "8080:8080"
     depends_on:
       - xmcp
-      - bnbproxy
       - wallet
       - solanaproxy
     restart: unless-stopped

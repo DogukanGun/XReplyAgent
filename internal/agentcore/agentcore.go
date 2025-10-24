@@ -244,13 +244,13 @@ func AskAgent(ctx context.Context, question string, twitterID string, replyTo st
 		x := newMCP(cfg.XMCP)
 		toolsList = append(toolsList, xTool{client: x})
 	}
-	if strings.TrimSpace(cfg.BNBMCP) != "" {
-		if t, err := bnbDiscoveredTools(newMCP(cfg.BNBMCP)); err == nil {
-			toolsList = append(toolsList, t...)
-		} else {
-			log.Println("failed to discover BNB HTTP tools:", err)
-		}
-	}
+	// if strings.TrimSpace(cfg.BNBMCP) != "" {
+	// 	if t, err := bnbDiscoveredTools(newMCP(cfg.BNBMCP)); err == nil {
+	// 		toolsList = append(toolsList, t...)
+	// 	} else {
+	// 		log.Println("failed to discover BNB HTTP tools:", err)
+	// 	}
+	// }
 	// Discover Solana tools (optional)
 	if strings.TrimSpace(cfg.SolanaMCP) != "" {
 		if t, err := bnbDiscoveredTools(newMCP(cfg.SolanaMCP)); err == nil {
