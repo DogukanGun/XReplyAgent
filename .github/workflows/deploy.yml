@@ -25,8 +25,8 @@ jobs:
             cd ${{ secrets.EC2_WORKDIR }}   # e.g. /home/ubuntu/XReplyAgent
             git fetch --all
             git reset --hard origin/main
-            docker compose down --remove-orphans || true
-            docker compose pull || true
-            docker compose --env-file .env up -d --build
-            docker image prune -f || true
-            docker compose ps
+            sudo docker compose down --remove-orphans || true
+            sudo docker compose pull || true
+            sudo docker compose --env-file .env up -d --build
+            sudo docker image prune -f || true
+            sudo docker compose ps
