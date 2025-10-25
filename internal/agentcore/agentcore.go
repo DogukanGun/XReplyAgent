@@ -21,7 +21,6 @@ import (
 type Config struct {
 	XMCP      string
 	WalletMCP string
-	BNBMCP    string
 	SolanaMCP string
 	Model     string
 }
@@ -155,8 +154,8 @@ func wlDiscoveredTools(wl *mcpHTTP) ([]tools.Tool, error) {
 	return out, nil
 }
 
-func bnbDiscoveredTools(bnb *mcpHTTP) ([]tools.Tool, error) {
-	raw, err := bnb.listTools()
+func solanaDiscoveredTools(solana *mcpHTTP) ([]tools.Tool, error) {
+	raw, err := solana.listTools()
 	if err != nil {
 		return nil, err
 	}
@@ -172,7 +171,7 @@ func bnbDiscoveredTools(bnb *mcpHTTP) ([]tools.Tool, error) {
 				description = fmt.Sprintf("%s\nInput JSON must match schema: %s", description, string(b))
 			}
 		}
-		out = append(out, genericMCPTool{client: bnb, name: name, desc: description})
+		out = append(out, genericMCPTool{client: solana, name: name, desc: description})
 	}
 	return out, nil
 }
@@ -182,7 +181,6 @@ func Ask(ctx context.Context, input string, twitterID string) (string, error) {
 	cfg := Config{
 		XMCP:      os.Getenv("X_MCP_HTTP"),
 		WalletMCP: os.Getenv("WALLET_MCP_HTTP"),
-		BNBMCP:    os.Getenv("BNB_MCP_HTTP"),
 		SolanaMCP: os.Getenv("SOLANA_MCP_HTTP"),
 		Model:     os.Getenv("OPENAI_MODEL"),
 	}
@@ -233,7 +231,7 @@ func sanitizeFinalAnswer(s string) string {
 	return strings.TrimSpace(s)
 }
 
-// AskAgent: unified ask that can handle reply/non-reply prompts (no posting)
+// AskAgent unified ask that can handle reply/non-reply prompts (no posting)
 func AskAgent(ctx context.Context, question string, twitterID string, replyTo string, mentionedUser string, cfg Config) (string, error) {
 	q := strings.TrimSpace(question)
 	if q == "" || strings.TrimSpace(twitterID) == "" {
@@ -244,16 +242,8 @@ func AskAgent(ctx context.Context, question string, twitterID string, replyTo st
 		x := newMCP(cfg.XMCP)
 		toolsList = append(toolsList, xTool{client: x})
 	}
-	// if strings.TrimSpace(cfg.BNBMCP) != "" {
-	// 	if t, err := bnbDiscoveredTools(newMCP(cfg.BNBMCP)); err == nil {
-	// 		toolsList = append(toolsList, t...)
-	// 	} else {
-	// 		log.Println("failed to discover BNB HTTP tools:", err)
-	// 	}
-	// }
-	// Discover Solana tools (optional)
 	if strings.TrimSpace(cfg.SolanaMCP) != "" {
-		if t, err := bnbDiscoveredTools(newMCP(cfg.SolanaMCP)); err == nil {
+		if t, err := solanaDiscoveredTools(newMCP(cfg.SolanaMCP)); err == nil {
 			toolsList = append(toolsList, t...)
 		} else {
 			log.Println("failed to discover Solana HTTP tools:", err)
@@ -289,12 +279,12 @@ func AskAgent(ctx context.Context, question string, twitterID string, replyTo st
 		prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. You are an AI agent that manages user wallets via tweet commands. "+
 			"Your reply will be posted on X; write concise, user-facing text. "+
 			"Never share private keys or the twitter_id in the reply. Then reply to tweet %s using x_post_reply. Also user\\'s twitter_id is %s. "+
-			"If a blockchain transaction is executed (e.g., a transfer), include its transaction hash; for wallet creation or reads, provide the wallet address."+
+			"Answer all questions according to Solana chain. If a blockchain transaction is executed (e.g., a transfer), include its transaction hash; for wallet creation or reads, provide the wallet address."+
 			"Also if user mentions another user like meaning to transfer something to another users, i am giving you possible user that is in tweet. If the input is empty, act like user has not mention"+
 			"anybody. And in this condition always use Kanalabs mcp server or tool. Here is the id: %s",
 			prompt, strings.TrimSpace(replyTo), strings.TrimSpace(twitterID), strings.TrimSpace(mentionedUser))
 	} else {
-		prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. The twitter id of the user is: %s ", q, twitterID)
+		prompt = fmt.Sprintf("%s Answer this question using the available MCP tools. Answer all questions according to Solana chain. The twitter id of the user is: %s ", q, twitterID)
 	}
 	out, callErr := exec.Call(ctx, map[string]any{"input": prompt})
 	if callErr != nil {
@@ -307,7 +297,7 @@ func AskAgent(ctx context.Context, question string, twitterID string, replyTo st
 	return sanitizeFinalAnswer(ans), nil
 }
 
-// TweetOnly: post without modification so caller can truncate/format as desired
+// TweetOnly post without modification so caller can truncate/format as desired
 func TweetOnly(ctx context.Context, replyTo string, text string, cfg Config) error {
 	if strings.TrimSpace(replyTo) == "" || strings.TrimSpace(text) == "" {
 		return fmt.Errorf("reply_to and text are required")
