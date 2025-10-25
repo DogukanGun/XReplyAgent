@@ -199,7 +199,7 @@ export default function XReplyAgentPage() {
               <li>Set up environment variables:
                 <pre className="whitespace-pre-wrap break-words bg-gray-200 dark:bg-gray-700 p-2 mt-1 rounded"><code>export AGENT_CMD=&quot;$(pwd)/agent&quot;
 export AGENT_CG_MCP_HTTP=&quot;http://localhost:8082/mcp&quot;
-export AGENT_X_MCP_HTTP=&quot;http://localhost:8081/mcp&quot;
+export X_MCP_HTTP=&quot;http://localhost:8081/mcp&quot;
 export AGENT_GOLDRUSH_MCP_HTTP=&quot;http://localhost:8083/mcp&quot;
 export OPENAI_API_KEY=&quot;your_openai_key&quot;</code></pre>
               </li>

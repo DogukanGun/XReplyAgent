@@ -56,7 +56,7 @@ EXPOSE 3002
 ENV GIN_MODE=release
 ENV ENV=prod
 # MongoDB URI will be set from build arg or runtime
-ENV MONGODB_URI=""
+ENV MONGO_URI=""
 
 # Run the binary
 CMD ["./main"]

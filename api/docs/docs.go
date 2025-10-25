@@ -24,6 +24,57 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/agent/ask": {
+            "post": {
+                "security": [
+                    {
+                        "Bearer": []
+                    }
+                ],
+                "description": "Invoke the agent with input, twitter_id (derived), optional reply_to and mentioned users",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "agent"
+                ],
+                "summary": "Ask the agent",
+                "parameters": [
+                    {
+                        "description": "Agent Ask Request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AgentAskRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.AgentAskResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/execute-app": {
             "post": {
                 "security": [
@@ -300,6 +351,31 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "handlers.AgentAskRequest": {
+            "type": "object",
+            "properties": {
+                "input": {
+                    "type": "string"
+                },
+                "mentioned_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "reply_to": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.AgentAskResponse": {
+            "type": "object",
+            "properties": {
+                "output": {
+                    "type": "string"
+                }
+            }
+        },
         "handlers.CheckUserRequest": {
             "type": "object",
             "properties": {

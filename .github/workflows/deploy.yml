@@ -1,0 +1,32 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Add EC2 host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }} # e.g. ubuntu
+          key: ${{ secrets.EC2_SSH_KEY }}  # private key contents
+          script: |
+            set -euo pipefail
+            cd ${{ secrets.EC2_WORKDIR }}   # e.g. /home/ubuntu/XReplyAgent
+            git fetch --all
+            git reset --hard origin/main
+            docker compose down --remove-orphans || true
+            docker compose pull || true
+            docker compose --env-file .env up -d --build
+            docker image prune -f || true
+            docker compose ps

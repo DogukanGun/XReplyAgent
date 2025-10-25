@@ -7,6 +7,11 @@ Automated X/Twitter mention responder powered by MCP servers and a LangChain age
 - **Tool-orchestration**: Use multiple MCP servers (BNB, Wallet, CoinGecko, GoldRush) via an agent.
 - **Hands-free posting**: Reply under the original tweet through an X MCP.
 
+### Solana Agent Kit Run
+Please go to folder cmd/mcp-servers/protocols/solana/agent and first run `pnpm install` and then build the project with `pnpm run build`. After a successful build, a build folder in same folder hierarchy must appear. Then please run ` pnpm run start:sse`. Now you will see mpc server is on with sse mode.
+
+*Side note: Please do not forget copy .env.example and fill it with your data* 
+
 ### BNB Chain hackathon focus 🟡
 We customized and integrated a BNB Chain MCP to deliver a social, X-native wallet experience:
 - **BNB MCP (customized SSE)**: We tweaked the BNB MCP server to expose rich EVM + Greenfield tools over SSE for real-time, robust operations on BSC/opBNB/Greenfield.
@@ -157,12 +162,34 @@ BNB_MCP_SSE="http://localhost:3001/sse" PORT=8084 ./bnbproxy
 ```
 This exposes HTTP MCP at `http://localhost:8084/mcp` forwarding to the SSE server.
 
+### 6) Start Solana MCP Server (SSE) 🔷
+```bash
+cd cmd/mcp-servers/protocols/solana/agent
+pnpm install
+pnpm run build
+
+export PORT=3000
+# choose one RPC (mainnet or testnet)
+export RPC_URL="https://api.mainnet-beta.solana.com"
+# export RPC_URL="https://api.testnet.solana.com"
+export OPENAI_API_KEY="<your_openai_key>"
+export MONGO_URI="mongodb://localhost:27017"
+pnpm run start:sse
+```
+
+### 7) Solana MCP HTTP Proxy (forward SSE -> HTTP MCP) 🔷
+```bash
+go build -o solanaproxy ./cmd/mcp-servers/protocols/solana/solanaproxy
+SOLANA_MCP_SSE="http://localhost:3000/sse" PORT=8087 ./solanaproxy
+```
+This exposes HTTP MCP at `http://localhost:8087/mcp` forwarding to the SSE server.
+
 ### 8) Start Wallet MCP Server 💳
 ```bash
 go build -o wallet ./cmd/mcp-servers/wallet
 export BNB_RPC_="https://bnb-mainnet.g.alchemy.com/v2/"
 export BNB_RPC="https://bnb-testnet.g.alchemy.com/v2/"
-export MONGODB_URI="mongodb://localhost:27017"  # Your MongoDB connection string
+export MONGO_URI="mongodb://localhost:27017"  # Your MongoDB connection string
 PORT=8085 ./wallet
 ```
 The Wallet MCP server provides secure wallet operations including:
@@ -178,11 +205,12 @@ go build -o agent ./cmd/agent
 go build -o bot ./cmd/bot
 export AGENT_CMD="$(pwd)/agent"
 export AGENT_CG_MCP_HTTP="http://localhost:8082/mcp"
-export AGENT_X_MCP_HTTP="http://localhost:8081/mcp"
+export X_MCP_HTTP="http://localhost:8081/mcp"
 export AGENT_GOLDRUSH_MCP_HTTP="http://localhost:8083/mcp"
 export OPENAI_API_KEY="<your_openai_key>"
-export AGENT_BNB_MCP_HTTP="http://localhost:8084/mcp"
-export AGENT_WALLET_MCP_HTTP="http://localhost:8085/mcp"
+export BNB_MCP_HTTP="http://localhost:8084/mcp"
+export WALLET_MCP_HTTP="http://localhost:8085/mcp"
+export SOLANA_MCP_HTTP="http://localhost:8087/mcp"
 PORT=8080 ./bot
 ```
 
@@ -236,20 +264,18 @@ curl -s -X POST http://localhost:8080/mentions \
 ### Wallet MCP Server  
 - `BNB_RPC_` (BNB mainnet RPC URL)
 - `BNB_RPC` (BNB testnet RPC URL) 
-- `MONGODB_URI` (MongoDB connection string for user wallet storage)
+- `MONGO_URI` (MongoDB connection string for user wallet storage)
 - `PORT` (default 8084)
 
 ### Agent
 - `CG_MCP_HTTP` (e.g., `http://localhost:8082/mcp`)
 - `X_MCP_HTTP` (e.g., `http://localhost:8081/mcp`)
-- `GOLDRUSH_MCP_HTTP` (e.g., `http://localhost:8083/mcp`)
-- `BNB_AGENT_MCP_SSE` (e.g., `http://localhost:3002/sse`)
 - `WALLET_MCP_HTTP` (e.g., `http://localhost:8084/mcp`)
 - `OPENAI_API_KEY`, `OPENAI_MODEL` (default `gpt-4o-mini-2024-07-18`)
 - Flags: `-q`, `-reply-to`, `-ti`
 
 ### Bot
-- `AGENT_CMD`, `AGENT_CG_MCP_HTTP`, `AGENT_X_MCP_HTTP`, `AGENT_GOLDRUSH_MCP_HTTP`, `AGENT_BNB_AGENT_MCP_SSE`, `AGENT_WALLET_MCP_HTTP`, `OPENAI_API_KEY`
+- `AGENT_CMD`, `AGENT_CG_MCP_HTTP`, `X_MCP_HTTP`, `AGENT_GOLDRUSH_MCP_HTTP`, `AGENT_BNB_AGENT_MCP_SSE`, `AGENT_SOLANA_MCP_HTTP`, `AGENT_SOLANA_MCP_HTTP`, `WALLET_MCP_HTTP`, `OPENAI_API_KEY`
 - `WEBHOOK_SECRET` (optional), `PORT` (default 8080)
 
 ---
@@ -291,11 +317,46 @@ kill <PID>            # or: pkill -f xmcp
 
 ### Wallet MCP Server issues
 - Ensure MongoDB is running and accessible
-- Verify database connection with the provided `MONGODB_URI`
+- Verify database connection with the provided `MONGO_URI`
 - Check that the user's Twitter ID exists in the database for wallet operations
 
 ### Remove tool chatter from replies
 - The agent sanitizes its final answer to remove lines like `Action:` / `Observation:`; update to latest build if you still see them.
+
+---
+
+## One-command run with Docker Compose 🐳
+
+If you prefer a single command for all services (good for local and EC2):
+
+1) Create a `.env` file at repo root (example):
+```env
+OPENAI_API_KEY=sk-...
+OPENAI_MODEL=gpt-4o-mini
+X_BEARER_TOKEN=...
+MONGO_URI=mongodb://mongo:27017
+SOLANA_RPC_URL=https://api.mainnet-beta.solana.com
+BNB_RPC_=https://bnb-mainnet.g.alchemy.com/v2/<key>
+BNB_RPC=https://bnb-testnet.g.alchemy.com/v2/<key>
+```
+
+2) Start everything:
+```bash
+docker compose --env-file .env up -d
+```
+
+3) Check logs:
+```bash
+docker compose logs -f bot
+```
+
+Exposed ports (host):
+- X MCP: 8081, CG Proxy: 8082, GoldRush: 8083, BNB Proxy: 8084, Wallet: 8085, Solana Proxy: 8087, Bot: 8080
+
+Stop and clean:
+```bash
+docker compose down
+```
 
 ---
 

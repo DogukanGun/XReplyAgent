@@ -1,4 +1,3 @@
-import Logger from "../utils/logger.js"
 import { MongoClient } from "mongodb"
 
 type ToolHandler<P, R> = (params: P) => Promise<R>
@@ -18,16 +17,16 @@ export function withTwitterAuth<P extends Record<string, any> & { twitter_id?: s
       throw new Error(`No user found for twitter_id=${twitter_id}, please create a wallet`)
     }
 
-    Logger.info(`Tool call${toolName ? ` [${toolName}]` : ''} by ${twitter_id}`)
+    console.log(`Tool call${toolName ? ` [${toolName}]` : ''} by ${twitter_id}`)
 
-    return handler({ ...params, privateKey: `0x${user.private_key}`  } as P & {
+    return handler({ ...params, privateKey: `${user.solana_private_key}`  } as P & {
       privateKey: string
     })
   }
 }
 
 
-async function getUserByTwitterId(twitterId: string) : Promise<{ twitter_id: string, public_key: string, private_key: string } | null> {
+async function getUserByTwitterId(twitterId: string) : Promise<{ twitter_id: string, public_key: string, solana_private_key: string } | null> {
     try {
       const client = await getMongoClient()
   const db = client.db("xreplyagent")
@@ -35,10 +34,8 @@ async function getUserByTwitterId(twitterId: string) : Promise<{ twitter_id: str
   
       const user = await collection.findOne<{ 
         twitter_id: string; 
-        eth_public_key?: string; 
-        eth_private_key?: string; 
-        solana_public_key?: string;
-        solana_private_key?: string;
+        solana_public_key: string; 
+        solana_private_key: string; 
         username?: string 
       }>({ twitter_id: twitterId })
   
@@ -48,11 +45,11 @@ async function getUserByTwitterId(twitterId: string) : Promise<{ twitter_id: str
   
       return {
         twitter_id: user.twitter_id,
-        public_key: user.eth_public_key ?? user.solana_public_key ?? "",
-        private_key: user.eth_private_key ?? user.solana_private_key ?? "",
+        public_key: user.solana_public_key,
+        solana_private_key: user.solana_private_key,
       }
     } catch (error) {
-      Logger.error("Error fetching user by twitter_id:", error)
+      console.error("Error fetching user by twitter_id:", error)
       return null
     }
 }
